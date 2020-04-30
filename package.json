@@ -1,7 +1,7 @@
 {
   "name": "simple-react-panel",
   "version": "1.0.0",
-  "description": "Grafana Panel Plugin Template",
+  "description": "Simple React Panel",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
     "test": "grafana-toolkit plugin:test",
@@ -26,8 +26,5 @@
   },
   "engines": {
     "node": ">=12 <13"
-  },
-  "dependencies": {
-    "emotion": "10.0.27"
   }
 }

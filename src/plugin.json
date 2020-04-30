@@ -1,14 +1,14 @@
 {
   "type": "panel",
-  "name": "Grafana Panel Plugin Template",
-  "id": "myorgid-simple-panel",
+  "name": "Traceroute Map Panel",
+  "id": "gowee-traceroute-map-panel",
 
   "info": {
-    "description": "Grafana Panel Plugin Template",
+    "description": "Simple React Panel",
     "author": {
-      "name": "Your Name"
+      "name": "Gowee"
     },
-    "keywords": ["panel", "template"],
+    "keywords": ["Simple"],
     "logos": {
       "small": "img/logo.svg",
       "large": "img/logo.svg"
