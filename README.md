@@ -33,3 +33,15 @@ To build the plugin run:
 ```BASH
 yarn build
 ```
+
+## Query
+### Preview via influx CLi tool
+```sql
+select hop, ip, avg, loss from (select mean(avg) as avg, mean(loss) as loss from mtr group by hop, ip, host, dest) group by host, dest
+```
+
+### Query in Grafanaz
+```sql
+select mean(avg) as rtt, mean(loss) as loss from mtr WHERE $timeFilter group by hop, ip, host, dest
+```
+& *Format as __Table__*.
