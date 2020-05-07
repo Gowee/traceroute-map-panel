@@ -30,10 +30,13 @@
   "dependencies": {
     "@types/ip-address": "^5.8.2",
     "@types/lodash": "^4.14.150",
+    "@types/lru-cache": "^5.1.0",
     "@types/react-leaflet": "^2.5.1",
+    "@types/react-leaflet-markercluster": "^2.0.0",
     "leaflet": "^1.6.0",
     "leaflet-defaulticon-compatibility": "^0.1.1",
     "react-leaflet": "^2.6.3",
+    "react-leaflet-markercluster": "^2.0.0",
     "ts-transformer-keys": "^0.4.1"
   }
 }
