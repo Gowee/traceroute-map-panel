@@ -4,11 +4,11 @@ import { PanelProps, LoadingState } from '@grafana/data';
 // import ipAddress from 'ip-address';
 // import { keys } from 'ts-transformer-keys';
 import _ from 'lodash';
-import { Map as LMap, Marker, Popup, TileLayer, LatLngBounds, MarkerClusterGroup, Polyline, LatLngTuple } from './react-leaflet-compat';
+import { Map as LMap, Marker, Popup, TileLayer, LatLngBounds, MarkerClusterGroup, Polyline, LatLngTuple, latLngBounds } from './react-leaflet-compat';
 
 import { SimpleOptions } from './types';
-import { IPGeo, ip2geo } from './geoip';
-import rainbow from './color'
+import { ip2geo } from './geoip';
+import { rainbow, round } from './utils'
 // import { Polyline } from 'leaflet';
 // import 'panel.css';
 
@@ -16,17 +16,30 @@ import rainbow from './color'
 interface Props extends PanelProps<SimpleOptions> { }
 
 interface State {
-  data: Map<string, Hop[]>;
+  data: Map<string, PathPoint[]>;
   series: any;
   mapBounds: LatLngBounds | undefined;
 }
 
-interface Hop {
-  hop: number;
-  ip: string;
-  rtt: number;
-  loss: number;
-  geo: IPGeo;
+// interface Hop {
+//   hop: number;
+//   ip: string;
+//   rtt: number;
+//   loss: number;
+//   geo: IPGeo;
+// }
+
+interface PathPoint {
+  lat: number;
+  lon: number;
+  region: string;
+  hops: {
+    nth: number;
+    ip: string;
+    net: string;
+    rtt: number;
+    loss: number;
+  }[]
 }
 
 // interface QueryEntry {
@@ -80,36 +93,47 @@ export class SimplePanel extends Component<Props, State> {
         console.log('Ignoring field: ' + field.name);
       }
     }
-    console.log(fields);
     if (Object.values(fields).includes(null)) {
       console.log('Invalid query data');
       return;
     }
-    let data: Map<string, Hop[]> = new Map();
-    let latLons = [];
-    for (let i = 0; i < fields.host.length; i++) {
-      const key = `${fields.host[i]}|${fields.dest[i]}`;
+    let entries = _.zip(fields.host, fields.dest, fields.hop, fields.ip, fields.rtt, fields.loss) as [string, string, string, string, string, string][];
+    entries.sort((a, b) => parseInt(a[2]) - parseInt(b[2]));
+    console.log(entries);
+    let data: Map<string, Map<string, PathPoint>> = new Map();
+    let latLons: LatLngTuple[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      const key = `${entry[0]}|${entry[1]}`;
       console.log(key);
-      const entry = {
-        hop: parseInt(fields.hop[i], 10),
-        ip: fields.ip[i] as string,
-        rtt: parseFloat(fields.rtt[i]),
-        loss: parseFloat(fields.loss[i]),
-        geo: await ip2geo(fields.ip[i])
-      };
+      const hop = parseInt(entry[2], 10),
+        ip = entry[3] as string,
+        rtt = parseFloat(entry[4]),
+        loss = parseFloat(entry[5]),
+        { region, net, lat, lon, bogon } = await ip2geo(ip);
+      if (bogon) {
+        continue;
+      }
       let group = data.get(key);
       if (group === undefined) {
-        group = [];
+        group = new Map();
         data.set(key, group);
       }
-      group.push(entry);
-      latLons.push([entry.geo.lat, entry.geo.lon]);
+      const point_id = `${round(lat, 1)},${round(lon, 1)}`;
+      let point = group.get(point_id);
+      if (point === undefined) {
+        point = { lat, lon: (lon + 360) % 360, region, hops: [] };
+        group.set(point_id, point);
+      }
+      point.hops.push({ nth: hop, ip, net, rtt, loss });
+      latLons.push([lat, (lon + 360) % 360]);
     }
-    const mapBounds = this.mapRef.current.leafletElement.getBounds(latLons);
+    console.log("latlons", latLons);
+    const mapBounds = latLngBounds(latLons).pad(1);
 
     console.log(data);
     this.setState({
-      data,
+      data: new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())])),
       series,
       mapBounds
     });
@@ -130,47 +154,63 @@ export class SimplePanel extends Component<Props, State> {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
         />
-        <MarkerClusterGroup options={{ singleMarkerMode: true }}>
+        <MarkerClusterGroup maxClusterRadius={15} /*options={{ singleMarkerMode: true }}*/>
           {
-            Array.from(data.entries()).map(([key, hops]) => {
+            Array.from(data.entries()).map(([key, points]) => {
               nth += 1;
               const [host, dest] = key.split("|");
               return (
-                <TraceRouteMarkers key={key} dest={dest} host={host} hops={hops} nth={nth} total={data.size}></TraceRouteMarkers>
+                <TraceRouteMarkers key={key} dest={dest} host={host} points={points} nth={nth} total={data.size}></TraceRouteMarkers>
               )
             })
           }
         </MarkerClusterGroup>
-        {/* <TraceRouteMarkers key={this.state.series} dest="B" host="A" hops={dd}>
-
-        </TraceRouteMarkers> */}
-        <Marker position={[51.505, -0.09]}>
+        {/* <Marker position={[51.505, -0.09]}>
           <Popup>
             A pretty CSS3 popup.
             <br />
             Easily customizable.
           </Popup>
-        </Marker>
+        </Marker> */}
       </LMap>
     );
   }
 }
 
 
-const TraceRouteMarkers: React.FC<{ host: string, dest: string, hops: Hop[], nth: number, total: number }> = ({ host, dest, hops, nth, total }) => {
-  console.log(hops);
+const TraceRouteMarkers: React.FC<{ host: string, dest: string, points: PathPoint[], nth: number, total: number }> = ({ host, dest, points, nth, total }) => {
+  console.log(points);
   return (
-    <div data-host={host} data-dest={dest} data-hops={hops.length}>
+    <div data-host={host} data-dest={dest} data-points={points.length}>
       {
-        hops.map((hop) =>
-          <Marker key={hop.hop} position={[hop.geo.lat, hop.geo.lon]} className="hop-marker">
-            <Popup className="hop-popup">
-              <span className="hop-nth">{hop.hop}</span> <span className="hop-label">{hop.geo.region}</span>
+        points.map(point =>
+          <Marker key={point.region} position={[point.lat, point.lon]} className="point-marker">
+            <Popup className="point-popup">
+              <span className="point-label">{point.region}</span>
+              <hr />
+              <ul className="hop-list">
+                {
+                  point.hops.map(
+                    hop =>
+                      <li className="hop">
+                        <span className="hop-nth">{hop.nth}</span> <span className="hop-label" title={`${hop.ip} RTT:${hop.rtt} Loss:${hop.loss}`}>{hop.net}</span>
+                      </li>
+                  )
+                }
+              </ul>
+              <hr />
+              <span className="host-label">
+                {host}
+              </span>
+                &nbsp; ➡️ &nbsp;
+                <span className="dest-label">
+                {dest}
+              </span>
             </Popup>
           </Marker>
         )
       }
-      <Polyline positions={hops.map(hop => [hop.geo.lat, hop.geo.lon] as LatLngTuple)} color={rainbow(nth, total)}>
+      <Polyline positions={points.map(point => [point.lat, (point.lon + 360) % 360] as LatLngTuple)} color={rainbow(total, nth, 0.618)}>
 
       </Polyline>
     </div>
