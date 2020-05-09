@@ -38,47 +38,53 @@ export function round(number: number, ndigits: number): number {
     return Math.round((number + Number.EPSILON) * factor) / factor;
 }
 
-export namespace HiddenHosts {
-    const ENTRYID = `${PACKAGE.name}-hidden-hosts`;
+export class HiddenHostsStorage {
+    ENTRYID:string;
 
-    export function load(): Set<string> {
-        const items = JSON.parse(localStorage.getItem(ENTRYID) || "null") || [];
+    constructor(panelID: string, packageID = PACKAGE.name) {
+        this.ENTRYID = `${packageID}-${panelID}-hidden-hosts`;
+    }
+
+
+    load(): Set<string> {
+        const items = JSON.parse(localStorage.getItem(this.ENTRYID) || "null") || [];
         return new Set(items);
     }
 
-    export function store(items: Set<string>) {
-        localStorage.setItem(ENTRYID, JSON.stringify(Array.from(items)));
+    store(items: Set<string>) {
+        localStorage.setItem(this.ENTRYID, JSON.stringify(Array.from(items)));
     }
 
-    export function add(item: string): Set<string> {
-        let items = load();
+    add(item: string): Set<string> {
+        let items = this.load();
         if (!items.has(item)) {
             items.add(item);
         }
-        store(items);
+        this.store(items);
         return items;
     }
 
-    export function remove(item: string): Set<string> {
-        let items = load();
+    remove(item: string): Set<string> {
+        let items = this.load();
         items.delete(item);
-        store(items);
+        this.store(items);
         return items;
     }
 
-    export function toggle(item: string): Set<string> {
-        let items = load();
+    toggle(item: string): Set<string> {
+        let items = this.load();
         if (items.has(item)) {
             items.delete(item);
         }
         else {
             items.add(item);
         }
-        store(items);
+        this.store(items);
         return items;
     }
 
-    export function clear() {
-        localStorage.removeItem(ENTRYID);
+    clear() {
+        localStorage.removeItem(this.ENTRYID);
     }
+
 }

@@ -9,7 +9,7 @@ import { Map as LMap, Marker, Popup, TileLayer, Control, LatLngBounds, MarkerClu
 
 import { SimpleOptions } from './types';
 import { ip2geo } from './geoip';
-import { rainbowPalette, round, HiddenHosts } from './utils'
+import { rainbowPalette, round, HiddenHostsStorage } from './utils'
 // import { Polyline } from 'leaflet';
 import 'panel.css';
 
@@ -21,6 +21,7 @@ interface State {
   series: any;
   mapBounds: Map<string, LatLngBounds>;
   hiddenHosts: Set<string>;
+  hostListExpanded: boolean;
 }
 
 // interface Hop {
@@ -55,14 +56,17 @@ interface PathPoint {
 
 export class SimplePanel extends Component<Props, State> {
   mapRef = createRef<any>()
+  hiddenHostsStorage: HiddenHostsStorage
 
   constructor(props: Props) {
     super(props);
+    this.hiddenHostsStorage = new HiddenHostsStorage(this.props.id.toString());
     this.state = {
       data: new Map(),
       series: null,
       mapBounds: new Map(),
-      hiddenHosts: HiddenHosts.load()
+      hiddenHosts: this.hiddenHostsStorage.load(),
+      hostListExpanded: true
     };
     this.processData();
     this.handleFit = this.handleFit.bind(this);
@@ -148,8 +152,8 @@ export class SimplePanel extends Component<Props, State> {
 
   toggleHostItem(item: string) {
     // event.currentTarget.
-    this.setState({ hiddenHosts: HiddenHosts.toggle(item) });
-    console.log(HiddenHosts.load());
+    this.setState({ hiddenHosts: this.hiddenHostsStorage.toggle(item) });
+    console.log(this.hiddenHostsStorage.load());
   }
 
   handleFit(event: MouseEvent) {
@@ -158,6 +162,10 @@ export class SimplePanel extends Component<Props, State> {
 
   getEffectiveBounds() {
     return Array.from(this.state.mapBounds.entries()).filter(([key, _value]) => !this.state.hiddenHosts.has(key)).map(([_key, value]) => value).reduce((prev: LatLngBounds | undefined, curr) => prev?.pad(0)?.extend(curr) ?? curr, undefined);
+  }
+
+  toggleHostList() {
+    this.setState((prevState) => { return { hostListExpanded: !prevState.hostListExpanded } });
   }
 
   render() {
@@ -196,27 +204,38 @@ export class SimplePanel extends Component<Props, State> {
           </Popup>
         </Marker> */}
         <Control position="bottomleft">
-          <ul className="host-list">
-            {
-              Array.from(data.entries()).map(([key, points]) => {
-                const [host, dest] = key.split("|");
-                const color = palette();
-                return (
-                  <li className="host-item" onClick={() => this.toggleHostItem(key)}>
-                    <span className="host-label">
-                      {host}
-                    </span>
-                    <span className="host-arrow" style={{ color: this.state.hiddenHosts.has(key) ? "grey" : color }}>
-                      <Icon name="arrow-right"></Icon>
-                    </span>
-                    <span className="dest-label">
-                      {dest}
-                    </span>
-                  </li>
-                )
-              })
-            }
-          </ul>
+          {this.state.hostListExpanded ?
+            <>
+              <span className="host-list-toggler host-list-collapse" onClick={() => this.toggleHostList()}>
+                <Icon name="compress"></Icon>
+              </span>
+              <ul className="host-list">
+                {
+                  Array.from(data.entries()).map(([key, points]) => {
+                    const [host, dest] = key.split("|");
+                    const color = palette();
+                    return (
+                      <li className="host-item" onClick={() => this.toggleHostItem(key)}>
+                        <span className="host-label">
+                          {host}
+                        </span>
+                        <span className="host-arrow" style={{ color: this.state.hiddenHosts.has(key) ? "grey" : color }}>
+                          <Icon name="arrow-right"></Icon>
+                        </span>
+                        <span className="dest-label">
+                          {dest}
+                        </span>
+                      </li>
+                    )
+                  })
+                }
+              </ul>
+            </>
+            :
+            <span className="host-list-toggler host-list-expand" onClick={() => this.toggleHostList()}>
+              <Icon name="expand"></Icon>
+            </span>
+          }
         </Control>
         <Control position="topright">
           <Button variant="primary" size="md" onClick={this.handleFit}>
@@ -255,9 +274,9 @@ const TraceRouteMarkers: React.FC<{ host: string, dest: string, points: PathPoin
                 <span className="host-label">
                   {host}
                 </span>
-                <span className="arrow">
+                <span className="host-arrow">
                   &nbsp; ➡️ &nbsp;
-              </span>
+                </span>
                 <span className="dest-label">
                   {dest}
                 </span>
