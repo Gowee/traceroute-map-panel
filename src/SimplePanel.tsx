@@ -172,7 +172,6 @@ export class SimplePanel extends Component<Props, State> {
     console.log("effetive bounds", effectiveBounds);
     // data.series
     // > select hop, ip, avg, loss from (select mean(avg) as avg, mean(loss) as loss from mtr group by hop, ip)
-    // ***REMOVED***
     return (
       <LMap key={this.state.series} ref={this.mapRef} center={[51.505, -0.09]} zoom={1} style={{ position: "relative", height, width }} bounds={effectiveBounds} options={{ zoomSnap: 0.5, zoomDelta: 0.5 }}>
         <TileLayer
