@@ -1,3 +1,33 @@
-.leaflet-container {
+/* .leaflet-container {
     height: 100%
+}
+ */
+
+.hop-list {
+    list-style: none;
+}
+
+.host-list {
+    list-style: none;
+}
+
+.host-item {
+    color: attr(data-color);
+    /* gainsboro */
+    background-color: rgba(255, 255, 255, 0.372);
+    border-radius: 5px;
+    padding: 0.1em 0.6em 0.1em 0.6em;
+}
+
+.host-item:hover {
+    background-color: rgba(255, 255, 255, 0.618);
+    cursor: pointer;
+    user-select: none;
+}
+
+.host-arrow {
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+    position: relative;
+    top: 2px;
 }

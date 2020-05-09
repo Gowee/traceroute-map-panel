@@ -1,16 +1,17 @@
-import React, { Component, createRef } from 'react';
+import React, { Component, createRef, MouseEvent } from 'react';
 import { PanelProps, LoadingState } from '@grafana/data';
+import { Icon, Button } from '@grafana/ui'
 // import { colors } from '@grafana/ui';
 // import ipAddress from 'ip-address';
 // import { keys } from 'ts-transformer-keys';
 import _ from 'lodash';
-import { Map as LMap, Marker, Popup, TileLayer, LatLngBounds, MarkerClusterGroup, Polyline, LatLngTuple, latLngBounds } from './react-leaflet-compat';
+import { Map as LMap, Marker, Popup, TileLayer, Control, LatLngBounds, MarkerClusterGroup, Polyline, LatLngTuple, latLngBounds } from './react-leaflet-compat';
 
 import { SimpleOptions } from './types';
 import { ip2geo } from './geoip';
-import { rainbow, round } from './utils'
+import { rainbowPalette, round, HiddenHosts } from './utils'
 // import { Polyline } from 'leaflet';
-// import 'panel.css';
+import 'panel.css';
 
 
 interface Props extends PanelProps<SimpleOptions> { }
@@ -18,7 +19,8 @@ interface Props extends PanelProps<SimpleOptions> { }
 interface State {
   data: Map<string, PathPoint[]>;
   series: any;
-  mapBounds: LatLngBounds | undefined;
+  mapBounds: Map<string, LatLngBounds>;
+  hiddenHosts: Set<string>;
 }
 
 // interface Hop {
@@ -59,9 +61,11 @@ export class SimplePanel extends Component<Props, State> {
     this.state = {
       data: new Map(),
       series: null,
-      mapBounds: undefined
+      mapBounds: new Map(),
+      hiddenHosts: HiddenHosts.load()
     };
     this.processData();
+    this.handleFit = this.handleFit.bind(this);
   }
 
   componentDidUpdate(prevProps: Props): void {
@@ -101,7 +105,6 @@ export class SimplePanel extends Component<Props, State> {
     entries.sort((a, b) => parseInt(a[2]) - parseInt(b[2]));
     console.log(entries);
     let data: Map<string, Map<string, PathPoint>> = new Map();
-    let latLons: LatLngTuple[] = [];
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       const key = `${entry[0]}|${entry[1]}`;
@@ -126,11 +129,15 @@ export class SimplePanel extends Component<Props, State> {
         group.set(point_id, point);
       }
       point.hops.push({ nth: hop, ip, net, rtt, loss });
-      latLons.push([lat, (lon + 360) % 360]);
-    }
-    console.log("latlons", latLons);
-    const mapBounds = latLngBounds(latLons).pad(1);
 
+      // latLons.push([lat, (lon + 360) % 360]);
+    }
+
+    let mapBounds: Map<string, LatLngBounds> = new Map();
+    for (const [key, points] of Array.from(data.entries())) {
+      mapBounds.set(key, latLngBounds(Array.from(points.values()).map(point => [point.lat, point.lon])));
+    }
+    console.log(mapBounds);
     console.log(data);
     this.setState({
       data: new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())])),
@@ -139,17 +146,35 @@ export class SimplePanel extends Component<Props, State> {
     });
   }
 
+  toggleHostItem(item: string) {
+    // event.currentTarget.
+    this.setState({ hiddenHosts: HiddenHosts.toggle(item) });
+    console.log(HiddenHosts.load());
+  }
+
+  handleFit(event: MouseEvent) {
+    this.mapRef.current.leafletElement.fitBounds(this.getEffectiveBounds());
+  }
+
+  getEffectiveBounds() {
+    return Array.from(this.state.mapBounds.entries()).filter(([key, _value]) => !this.state.hiddenHosts.has(key)).map(([_key, value]) => value).reduce((prev: LatLngBounds | undefined, curr) => prev?.pad(0)?.extend(curr) ?? curr, undefined);
+  }
+
   render() {
     const { /*options,*/ width, height } = this.props;
     const data = this.state.data;
     console.log("rendering", width, height);
     console.log(this.state.mapBounds);
-    let nth = -1;
+    let palette = rainbowPalette(data.size, 0.618);
+    console.log("TTTTTTTTT");
+    console.log(this.state.hiddenHosts, this.state.mapBounds.entries(), Array.from(this.state.mapBounds.entries()).filter(([key, _value]) => !this.state.hiddenHosts.has(key)));
+    const effectiveBounds = this.getEffectiveBounds();
+    console.log("effetive bounds", effectiveBounds);
     // data.series
     // > select hop, ip, avg, loss from (select mean(avg) as avg, mean(loss) as loss from mtr group by hop, ip)
     // ***REMOVED***
     return (
-      <LMap key={this.state.series} ref={this.mapRef} center={[51.505, -0.09]} zoom={1} style={{ position: "relative", height, width }} bounds={this.state.mapBounds}>
+      <LMap key={this.state.series} ref={this.mapRef} center={[51.505, -0.09]} zoom={1} style={{ position: "relative", height, width }} bounds={effectiveBounds} options={{ zoomSnap: 0.5, zoomDelta: 0.5 }}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -157,10 +182,9 @@ export class SimplePanel extends Component<Props, State> {
         <MarkerClusterGroup maxClusterRadius={15} /*options={{ singleMarkerMode: true }}*/>
           {
             Array.from(data.entries()).map(([key, points]) => {
-              nth += 1;
               const [host, dest] = key.split("|");
               return (
-                <TraceRouteMarkers key={key} dest={dest} host={host} points={points} nth={nth} total={data.size}></TraceRouteMarkers>
+                <TraceRouteMarkers key={key} dest={dest} host={host} points={points} color={palette()} visible={!this.state.hiddenHosts.has(key)}></TraceRouteMarkers>
               )
             })
           }
@@ -172,47 +196,79 @@ export class SimplePanel extends Component<Props, State> {
             Easily customizable.
           </Popup>
         </Marker> */}
-      </LMap>
+        <Control position="bottomleft">
+          <ul className="host-list">
+            {
+              Array.from(data.entries()).map(([key, points]) => {
+                const [host, dest] = key.split("|");
+                const color = palette();
+                return (
+                  <li className="host-item" onClick={() => this.toggleHostItem(key)}>
+                    <span className="host-label">
+                      {host}
+                    </span>
+                    <span className="host-arrow" style={{ color: this.state.hiddenHosts.has(key) ? "grey" : color }}>
+                      <Icon name="arrow-right"></Icon>
+                    </span>
+                    <span className="dest-label">
+                      {dest}
+                    </span>
+                  </li>
+                )
+              })
+            }
+          </ul>
+        </Control>
+        <Control position="topright">
+          <Button variant="primary" size="md" onClick={this.handleFit}>
+            {/* FIX: @grafana/ui Button keeps active state */}
+            Fit
+          </Button>
+        </Control>
+      </LMap >
     );
   }
 }
 
 
-const TraceRouteMarkers: React.FC<{ host: string, dest: string, points: PathPoint[], nth: number, total: number }> = ({ host, dest, points, nth, total }) => {
+const TraceRouteMarkers: React.FC<{ host: string, dest: string, points: PathPoint[], color: string, visible: boolean }> = ({ host, dest, points, color, visible }) => {
   console.log(points);
-  return (
-    <div data-host={host} data-dest={dest} data-points={points.length}>
-      {
-        points.map(point =>
-          <Marker key={point.region} position={[point.lat, point.lon]} className="point-marker">
-            <Popup className="point-popup">
-              <span className="point-label">{point.region}</span>
-              <hr />
-              <ul className="hop-list">
-                {
-                  point.hops.map(
-                    hop =>
-                      <li className="hop">
-                        <span className="hop-nth">{hop.nth}</span> <span className="hop-label" title={`${hop.ip} RTT:${hop.rtt} Loss:${hop.loss}`}>{hop.net}</span>
-                      </li>
-                  )
-                }
-              </ul>
-              <hr />
-              <span className="host-label">
-                {host}
+  return visible ?
+    (
+      <div data-host={host} data-dest={dest} data-points={points.length}>
+        {
+          points.map(point =>
+            <Marker key={point.region} position={[point.lat, point.lon]} className="point-marker">
+              <Popup className="point-popup">
+                <span className="point-label">{point.region}</span>
+                <hr />
+                <ul className="hop-list">
+                  {
+                    point.hops.map(
+                      hop =>
+                        <li className="hop-item">
+                          <span className="hop-nth">{hop.nth}</span> <span className="hop-label" title={`${hop.ip} RTT:${hop.rtt} Loss:${hop.loss}`}>{hop.net}</span>
+                        </li>
+                    )
+                  }
+                </ul>
+                <hr />
+                <span className="host-label">
+                  {host}
+                </span>
+                <span className="arrow">
+                  &nbsp; ➡️ &nbsp;
               </span>
-                &nbsp; ➡️ &nbsp;
                 <span className="dest-label">
-                {dest}
-              </span>
-            </Popup>
-          </Marker>
-        )
-      }
-      <Polyline positions={points.map(point => [point.lat, (point.lon + 360) % 360] as LatLngTuple)} color={rainbow(total, nth, 0.618)}>
-
-      </Polyline>
-    </div>
-  )
+                  {dest}
+                </span>
+              </Popup>
+            </Marker>
+          )
+        }
+        <Polyline positions={points.map(point => [point.lat, (point.lon + 360) % 360] as LatLngTuple)} color={color}>
+        </Polyline>
+      </div>
+    )
+    : (<></>);
 };

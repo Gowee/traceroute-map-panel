@@ -4,10 +4,11 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.webpack.css'; // Re-uses images from ~leaflet package
 export * from 'react-leaflet';
 import 'leaflet-defaulticon-compatibility';
-export { LatLngBounds, LatLngTuple, latLngBounds } from 'leaflet';
+import { LatLngBounds, LatLngTuple, latLngBounds } from 'leaflet';
 import 'react-leaflet-markercluster/dist/styles.min.css';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
-export { MarkerClusterGroup };
+import Control from 'react-leaflet-control';
+export { MarkerClusterGroup, Control, LatLngBounds, LatLngTuple, latLngBounds };
 // import 'leaflet-polylinedecorator';
 // import Leaflet, {Polyline, } from 'leaflet';
 // const polylineDecorator = (Leaflet as any).polylineDecorator;

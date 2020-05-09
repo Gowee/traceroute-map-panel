@@ -36,6 +36,7 @@
     "leaflet": "^1.6.0",
     "leaflet-defaulticon-compatibility": "^0.1.1",
     "react-leaflet": "^2.6.3",
+    "react-leaflet-control": "^2.1.2",
     "react-leaflet-markercluster": "^2.0.0",
     "ts-transformer-keys": "^0.4.1"
   }
