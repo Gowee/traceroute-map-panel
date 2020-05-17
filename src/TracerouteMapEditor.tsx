@@ -1,34 +1,19 @@
-import React, { PureComponent, useState, ChangeEvent } from 'react';
-import { /*FormField,  Select, FormField, Button,*/ Forms } from '@grafana/ui';
-// import Legend from '@grafana/ui/components/Forms';
+import React, { PureComponent, ChangeEvent } from 'react';
+import { Forms } from '@grafana/ui';
 import { PanelEditorProps, SelectableValue } from '@grafana/data';
 
 import { TracerouteMapOptions } from './types';
-import {
-  /*GeoIPProvider, IPGeo,, IPInfo, IPSB, CustomAPI, CustomFunction*/
-  GeoIPProviderKind,
-  GeoIPProvider,
-  IPInfo,
-  CustomAPI,
-  IP2Geo,
-  CustomFunction,
-} from './geoip';
+import { GeoIPProviderKind, GeoIPProvider, IPInfo, CustomAPI, IP2Geo, CustomFunction } from './geoip';
 import { CodeSnippets, timeout } from './utils';
-// TODO: generate form fields thru reflection on GeoIPProvider
 
 interface Props extends PanelEditorProps<TracerouteMapOptions> {}
 
 interface State {
   geoIPProvider: GeoIPProvider;
   test: { pending: boolean; title?: string; output?: string };
-  // ipinfoToken?: string,
-  // customAPI?: string,
-  // customFunction?: string
 }
 
 export class TracerouteMapEditor extends PureComponent<PanelEditorProps<TracerouteMapOptions>, State> {
-  // geoIPProviderConfig: any
-
   constructor(props: Props) {
     super(props);
     const options = this.props.options;
@@ -49,56 +34,6 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
     this.setState({ geoIPProvider: this.props.options.geoIPProviders[option.value ?? 'ipsb'], test: { pending: false } });
   };
 
-  updateIPInfo(token?: string) {
-    // const inputCache = this.props.options.inputCache;
-    // if (token !== undefined) {
-    //   inputCache.ipinfoToken = token;
-    // }
-    // this.props.onOptionsChange({
-    //   ...this.props.options,
-    //   // text: "ipinfo"
-    //   geoIPProvider: { kind: "ipinfo", token: inputCache.ipinfoToken }
-    // });
-  }
-
-  updateIPSB() {
-    // this.props.onOptionsChange({
-    //   ...this.props.options,
-    //   geoIPProvider: { kind: "ipsb" }
-    // })
-  }
-
-  updateCustomAPI(url?: string) {
-    // const inputCache = this.props.options.inputCache;
-    // if (url !== undefined) {
-    //   inputCache.customAPI = url;
-    // }
-    // this.props.onOptionsChange({
-    //   ...this.props.options,
-    //   geoIPProvider: { kind: "custom-api", url: inputCache.customAPI ?? "" }
-    // });
-  }
-
-  updateCustomFunction(code?: string) {
-    // const inputCache = this.props.options.inputCache;
-    // if (code !== undefined) {
-    //   inputCache.customFunction = code;
-    // }
-    // let func = (() => Object()) as (ip: string) => Promise<IPGeo>
-    // if (func) {
-    //   try {
-    //     func = eval(inputCache.customFunction as string) as (ip: string) => Promise<IPGeo>;
-    //   }
-    //   catch (e) {
-    //   }
-    // }
-    // console.log(func);
-    // this.props.onOptionsChange({
-    //   ...this.props.options,
-    //   geoIPProvider: { kind: 'custom-function', func }
-    // });
-  }
-
   handleGeoIPProviderChange(provider: GeoIPProvider) {
     this.setState({ geoIPProvider: provider });
   }
@@ -106,8 +41,6 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
   async handleTestAndSave() {
     const provider = this.state.geoIPProvider;
     this.setState({ test: { pending: true, title: 'Testing...', output: '' } });
-    // setTest({ pending: true, title: "Testing...", output: "" });
-    // console.log("test");
     let geo;
     let error;
     try {
@@ -128,11 +61,6 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
       providers[provider.kind] = provider as any;
       this.props.onOptionsChange({ ...this.props.options, geoIPProviders: providers });
     }
-    // setTest({
-    //   pending: false,
-    //   title: error ? "❌ Failed" : "✅ Done",
-    //   output: error ? error.stack.toString() : JSON.stringify(geo, null, 4)
-    // })
   }
 
   render() {
@@ -141,7 +69,6 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
     return (
       <div className="section gf-form-group">
         <h5 className="section-header">GeoIP</h5>
-        {/* <Forms.Field label="Text" labelWidth={5} inputWidth={20} type="text" onChange={this.onTextChanged} value={options.text || ''} /> */}
         <div style={{ width: 500 }}>
           <Forms.Field label="Provider">
             <Forms.Select options={geoIPOptions} value={this.state.geoIPProvider.kind} onChange={this.onGeoIPProviderSelected} />
@@ -153,11 +80,8 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
                 return <IPInfoConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />;
               case 'ipsb':
                 return <IPSBConfig />;
-              // <span>Free API provided by <a href="https://ip.sb/api/">IP.sb</a>, which relys on <a href="http://www.maxmind.com/">MaxMind</a>'s GeoLite2 database. No API token is required.</span>);
               case 'custom-api':
                 return <CustomAPIConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />;
-              // <FormField label="API URL" type="text" value={options.inputCache.customAPI} onChange={(event) => this.updateCustomAPI(event.target.value)} inputWidth="100%" />
-
               case 'custom-function':
                 return <CustomFunctionConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />;
             }
@@ -204,13 +128,6 @@ const IPSBConfig: React.FC = () => {
 };
 
 const IPInfoConfig: React.FC<{ config: IPInfo; onChange: (config: IPInfo) => void }> = ({ config, onChange }) => {
-  // const [token, setToken] = useState<string | undefined>(undefined);
-  // const [test, setTest] = useState({
-  //   pending: false,
-  //   title: "",
-  //   output: ""
-  // });
-
   return (
     <>
       <Forms.Field label="Access Token" description="optional">
@@ -227,11 +144,6 @@ const IPInfoConfig: React.FC<{ config: IPInfo; onChange: (config: IPInfo) => voi
           optional, but requests without token is rate-limited. After registration, their free plan provides with 50k lookups per month.
         </span>
       </Forms.Field>
-      {/* <> */}
-      {/* <Forms.Button onClick={onTestAndSave} icon={test.pending ? "fa fa-spinner fa-spin" : undefined} disabled={test.pending}>
-          Test and Save
-        </Forms.Button>
-      // </> */}
     </>
   );
 };
@@ -259,6 +171,9 @@ const CustomAPIConfig: React.FC<{ config: CustomAPI; onChange: (config: CustomAP
             </pre>
             with <code>Content-Type: application/json</code> and proper <code>Access-Control-Allow-Origin</code> HTTP header set.
           </p>
+          <p>
+            <strong>Example</strong>: <a href="https://github.com/Gowee/traceroute-map-panel/blob/master/ipip-cfworker.js">ipip-cfworker.js</a>
+          </p>
         </>
       </Forms.Field>
     </>
@@ -267,7 +182,6 @@ const CustomAPIConfig: React.FC<{ config: CustomAPI; onChange: (config: CustomAP
 
 const CustomFunctionConfig: React.FC<{ config: CustomFunction; onChange: (config: CustomFunction) => void }> = ({ config, onChange }) => {
   return (
-    // <div style={{ width: 300 }}>
     <>
       <Forms.Field label="Code">
         <Forms.TextArea
@@ -291,18 +205,11 @@ const CustomFunctionConfig: React.FC<{ config: CustomFunction; onChange: (config
         </p>
       </Forms.Field>
     </>
-    // </div>
   );
 };
 
 // TODO: use reflection to unify types?
 
-// function getGeoIPOptionFromProvider(provider: GeoIPProvider): SelectableValue<string> {
-//   return geoIPOptions.filter((option) => option.value === provider.kind)[0];
-// }
-
 // const Link： React.FC< { url: string } = (url: string) => {
 //   return <a href={url}></a>
 // };
-
-console.log(CodeSnippets, IP2Geo, timeout, useState);

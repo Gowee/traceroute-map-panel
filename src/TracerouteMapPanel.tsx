@@ -1,8 +1,6 @@
 import React, { Component, createRef, MouseEvent } from 'react';
 import { PanelProps, LoadingState } from '@grafana/data';
 import { Icon, Button } from '@grafana/ui';
-// import { colors } from '@grafana/ui';
-// import ipAddress from 'ip-address';
 // import { keys } from 'ts-transformer-keys';
 import _ from 'lodash';
 import {
@@ -21,10 +19,9 @@ import {
 import { TracerouteMapOptions } from './types';
 import { IP2Geo, IPGeo } from './geoip';
 import { rainbowPalette, round, HiddenHostsStorage } from './utils';
-// import { Polyline } from 'leaflet';
 import 'panel.css';
 
-interface Props extends PanelProps<TracerouteMapOptions> {}
+interface Props extends PanelProps<TracerouteMapOptions> { }
 
 interface State {
   data: Map<string, PathPoint[]>;
@@ -46,7 +43,6 @@ interface PathPoint {
     loss: number;
   }>;
 }
-// TODO: use catersian product to handle mesh-like route paths
 
 export class TracerouteMapPanel extends Component<Props, State> {
   mapRef = createRef<any>();
@@ -77,11 +73,9 @@ export class TracerouteMapPanel extends Component<Props, State> {
       this.ip2geo = IP2Geo.fromProvider(this.props.options.geoIPProviders[this.props.options.geoIPProviders.active]);
     }
     if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
-      // console.log(this.mapRef.current);
       // https://github.com/PaulLeCam/react-leaflet/issues/340#issuecomment-527939630
       this.mapRef.current.leafletElement.invalidateSize();
     }
-    console.log(this.props.data);
     if (this.props.data.series !== this.state.series && this.props.data.state === LoadingState.Done) {
       this.processData();
     }
@@ -90,12 +84,11 @@ export class TracerouteMapPanel extends Component<Props, State> {
   async processData(): Promise<void> {
     const series = this.props.data.series;
     if (series.length !== 1 || series[0].fields.length !== 7) {
-      console.log(series);
       console.log('No query data or not formatted as table.');
       return;
     }
     let fields: any = {};
-    // keys<QueryEntry>()
+    // TODO: use catersian product to handle mesh-like route paths
     ['host', 'dest', 'hop', 'ip', 'rtt', 'loss'].forEach(item => (fields[item] = null));
     for (const field of series[0].fields) {
       if (fields.hasOwnProperty(field.name)) {
@@ -112,18 +105,15 @@ export class TracerouteMapPanel extends Component<Props, State> {
       [string, string, string, string, string, string]
     >;
     entries.sort((a, b) => parseInt(a[2], 10) - parseInt(b[2], 10));
-    console.log(entries);
     let data: Map<string, Map<string, PathPoint>> = new Map();
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       const key = `${entry[0]}|${entry[1]}`;
-      console.log(key);
       const hop = parseInt(entry[2], 10),
         ip = entry[3] as string,
         rtt = parseFloat(entry[4]),
         loss = parseFloat(entry[5]),
         { region, label, lat: lat_, lon: lon_ } = await this.ip2geo(ip);
-      console.log('pop123', region, label, lat_, lon_);
       if (typeof lat_ !== 'number' || typeof lon_ !== 'number') {
         // implying invalid or LAN IP
         continue;
@@ -137,7 +127,6 @@ export class TracerouteMapPanel extends Component<Props, State> {
         data.set(key, group);
       }
       const point_id = `${round(lat, 1)},${round(lon, 1)}`;
-      console.log('pID', point_id);
       let point = group.get(point_id);
       if (point === undefined) {
         point = { lat, lon: (lon + 360) % 360, region: region ?? 'unknown region', hops: [] };
@@ -147,13 +136,10 @@ export class TracerouteMapPanel extends Component<Props, State> {
 
       // latLons.push([lat, (lon + 360) % 360]);
     }
-    console.log(data);
     let mapBounds: Map<string, LatLngBounds> = new Map();
     for (const [key, points] of Array.from(data.entries())) {
       mapBounds.set(key, latLngBounds(Array.from(points.values()).map(point => [point.lat, point.lon])));
     }
-    console.log(mapBounds);
-    console.log(data);
     this.setState({
       data: new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())])),
       series,
@@ -164,7 +150,6 @@ export class TracerouteMapPanel extends Component<Props, State> {
   toggleHostItem(item: string) {
     // event.currentTarget.
     this.setState({ hiddenHosts: this.hiddenHostsStorage.toggle(item) });
-    console.log(this.hiddenHostsStorage.load());
   }
 
   handleFit(event: MouseEvent) {
@@ -187,17 +172,9 @@ export class TracerouteMapPanel extends Component<Props, State> {
   render() {
     const { /*options,*/ width, height } = this.props;
     const data = this.state.data;
-    console.log('rendering', width, height);
-    console.log(this.state.mapBounds);
     let palette = rainbowPalette(data.size, 0.618);
-    console.log('TTTTTTTTT');
-    console.log(
-      this.state.hiddenHosts,
-      this.state.mapBounds.entries(),
-      Array.from(this.state.mapBounds.entries()).filter(([key, _value]) => !this.state.hiddenHosts.has(key))
-    );
     const effectiveBounds = this.getEffectiveBounds();
-    console.log('effetive bounds', effectiveBounds);
+    console.log('Map effetive bounds', effectiveBounds);
     // data.series
     // > select hop, ip, avg, loss from (select mean(avg) as avg, mean(loss) as loss from mtr group by hop, ip)
     return (
@@ -229,13 +206,6 @@ export class TracerouteMapPanel extends Component<Props, State> {
             );
           })}
         </MarkerClusterGroup>
-        {/* <Marker position={[51.505, -0.09]}>
-          <Popup>
-            A pretty CSS3 popup.
-            <br />
-            Easily customizable.
-          </Popup>
-        </Marker> */}
         <Control position="bottomleft">
           {this.state.hostListExpanded ? (
             <>
@@ -259,10 +229,10 @@ export class TracerouteMapPanel extends Component<Props, State> {
               </ul>
             </>
           ) : (
-            <span className="host-list-toggler host-list-expand" onClick={() => this.toggleHostList()}>
-              <Icon name="expand"></Icon>
-            </span>
-          )}
+              <span className="host-list-toggler host-list-expand" onClick={() => this.toggleHostList()}>
+                <Icon name="expand"></Icon>
+              </span>
+            )}
         </Control>
         <Control position="topright">
           <Button variant="primary" size="md" onClick={this.handleFit}>
@@ -282,7 +252,6 @@ const TraceRouteMarkers: React.FC<{ host: string; dest: string; points: PathPoin
   color,
   visible,
 }) => {
-  console.log(points);
   return visible ? (
     <div data-host={host} data-dest={dest} data-points={points.length}>
       {points.map(point => (
@@ -310,6 +279,6 @@ const TraceRouteMarkers: React.FC<{ host: string; dest: string; points: PathPoin
       <Polyline positions={points.map(point => [point.lat, (point.lon + 360) % 360] as LatLngTuple)} color={color}></Polyline>
     </div>
   ) : (
-    <></>
-  );
+      <></>
+    );
 };

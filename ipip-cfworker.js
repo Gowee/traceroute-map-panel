@@ -1,3 +1,5 @@
+// This script is expected to deploy on Cloudflare Workers (https://workers.cloudflare.com/)
+
 addEventListener('fetch', event => {
     event.respondWith(cached(handleRequest)(event))
 })
