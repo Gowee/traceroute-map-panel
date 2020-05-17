@@ -18,6 +18,8 @@
     border-radius: 5px;
     padding: 0.1em 0.6em 0.1em 0.6em;
     color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: space-between;
 }
 
 .host-item:hover {
@@ -32,6 +34,14 @@
     margin-right: 0.5em;
     position: relative;
     top: 2px;
+}
+
+.host-label, .dest-label {
+    display: inline-block;
+    width: 8em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
 }
 
 .host-list-toggler {
