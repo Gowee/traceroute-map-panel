@@ -110,17 +110,17 @@ export class HiddenHostsStorage {
   }
 }
 
-export namespace codeSnippets {
-  export const ipgeoInterface = `export interface IPGeo {
+export class CodeSnippets {
+  static ipgeoInterface = `export interface IPGeo {
     region?: string,
     label?: string,
     lat?: number,
     lon?: number,
 }`;
 
-  export const ip2geoSignature = `(ip: string) => Promise<IPGeo>`;
+  static ip2geoSignature = `(ip: string) => Promise<IPGeo>`;
 
-  export const ip2geoFunction = `async function(ip) {
+  static ip2geoFunction = `async function(ip) {
     const r = await fetch(\`https://api.ip.sb/geoip/\${ip}\`, { headers: { 'Accept': "application/json" } });
     const data = await r.json();
     const { country, latitude, longitude, isp } = data;

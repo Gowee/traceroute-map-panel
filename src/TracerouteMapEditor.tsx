@@ -13,7 +13,7 @@ import {
   IP2Geo,
   CustomFunction,
 } from './geoip';
-import { codeSnippets, timeout } from './utils';
+import { CodeSnippets, timeout } from './utils';
 // TODO: generate form fields thru reflection on GeoIPProvider
 
 interface Props extends PanelEditorProps<TracerouteMapOptions> {}
@@ -255,7 +255,7 @@ const CustomAPIConfig: React.FC<{ config: CustomAPI; onChange: (config: CustomAP
           <p>
             The API is expected to return data matching the interface:
             <pre>
-              <code>{codeSnippets.ipgeoInterface}</code>
+              <code>{CodeSnippets.ipgeoInterface}</code>
             </pre>
             with <code>Content-Type: application/json</code> and proper <code>Access-Control-Allow-Origin</code> HTTP header set.
           </p>
@@ -273,7 +273,7 @@ const CustomFunctionConfig: React.FC<{ config: CustomFunction; onChange: (config
         <Forms.TextArea
           value={config.code}
           rows={15}
-          placeholder={codeSnippets.ip2geoFunction}
+          placeholder={CodeSnippets.ip2geoFunction}
           style={{ fontFamily: 'monospace' }}
           onChange={(event: ChangeEvent<HTMLTextAreaElement>) => onChange({ ...config, code: event.target.value })}
         />
@@ -282,11 +282,11 @@ const CustomFunctionConfig: React.FC<{ config: CustomFunction; onChange: (config
         <p>
           The JavaScript function is expected to match the signature:
           <pre>
-            <code>{codeSnippets.ip2geoSignature}</code>
+            <code>{CodeSnippets.ip2geoSignature}</code>
           </pre>
           where <code>IPGeo</code> is:
           <pre>
-            <code>{codeSnippets.ipgeoInterface}</code>
+            <code>{CodeSnippets.ipgeoInterface}</code>
           </pre>
         </p>
       </Forms.Field>
@@ -305,4 +305,4 @@ const CustomFunctionConfig: React.FC<{ config: CustomFunction; onChange: (config
 //   return <a href={url}></a>
 // };
 
-console.log(codeSnippets, IP2Geo, timeout, useState);
+console.log(CodeSnippets, IP2Geo, timeout, useState);

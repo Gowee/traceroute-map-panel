@@ -10,11 +10,13 @@ import { PACKAGE } from './utils';
 export type GeoIPProvider = IPInfo | IPSB | CustomAPI | CustomFunction;
 export type GeoIPProviderKind = 'ipinfo' | 'ipsb' | 'custom-api' | 'custom-function';
 
+// eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface IPInfo {
   kind: 'ipinfo';
   token?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface IPSB {
   kind: 'ipsb';
 }
@@ -29,6 +31,7 @@ export interface CustomFunction {
   code: string; //(ip: string) => Promise<IPGeo>
 }
 
+// eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface IPGeo {
   region?: string;
   label?: string;
@@ -42,23 +45,24 @@ const cache = {
   set: (key: string, value: IPGeo) => sessionStorage.setItem(`${PACKAGE.NAME}-geoip-${key}`, JSON.stringify(value)),
 };
 
-export namespace IP2Geo {
-  export const defaultProvider: GeoIPProvider = { kind: 'ipsb' } as IPSB;
+export class IP2Geo {
+  defaultProvider: GeoIPProvider = { kind: 'ipsb' } as IPSB;
 
-  export function fromProvider(provider: GeoIPProvider) {
+  static fromProvider(provider: GeoIPProvider) {
     let fn: (ip: string) => Promise<IPGeo>;
     switch (provider.kind) {
       case 'ipinfo':
-        fn = (ip: string) => IPInfo(ip, provider.token);
+        fn = (ip: string) => IP2Geo.IPInfo(ip, provider.token);
         break;
       case 'ipsb':
-        fn = IPSB;
+        fn = IP2Geo.IPSB;
         break;
       case 'custom-api':
-        fn = (ip: string) => GenericAPI(provider.url, ip);
+        fn = (ip: string) => IP2Geo.GenericAPI(provider.url, ip);
         break;
       default:
         /* case 'custom-function': */
+        // eslint-disable-next-line no-eval
         eval(`fn = ${provider.code}`);
     }
     // TODO: sanitize API query result
@@ -79,7 +83,7 @@ export namespace IP2Geo {
     return ip2geo;
   }
 
-  export async function IPInfo(ip: string, token?: string): Promise<IPGeo> {
+  static async IPInfo(ip: string, token?: string): Promise<IPGeo> {
     const r = await fetch(`https://ipinfo.io/${ip}/json?token=${token ?? ''}`, {
       headers: {
         Accept: 'application/json',
@@ -96,7 +100,7 @@ export namespace IP2Geo {
     return geo;
   }
 
-  export async function IPSB(ip: string): Promise<IPGeo> {
+  static async IPSB(ip: string): Promise<IPGeo> {
     const r = await fetch(`https://api.ip.sb/geoip/${ip}`, { headers: { Accept: 'application/json' } });
     const data = await r.json();
     const { country, latitude, longitude, isp } = data;
@@ -104,7 +108,7 @@ export namespace IP2Geo {
     return geo;
   }
 
-  export async function GenericAPI(url: string, ip: string): Promise<IPGeo> {
+  static async GenericAPI(url: string, ip: string): Promise<IPGeo> {
     console.log(url);
     const r = await fetch(url.replace('{IP}', ip), { headers: { Accept: 'application/json' } });
     console.log(url.replace('{IP}', ip));
