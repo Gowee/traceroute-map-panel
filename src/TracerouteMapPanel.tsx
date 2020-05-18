@@ -9,11 +9,11 @@ import {
   Popup,
   TileLayer,
   Control,
-  LatLngBounds,
   MarkerClusterGroup,
   Polyline,
   LatLngTuple,
   latLngBounds,
+  LatLngBounds,
 } from './react-leaflet-compat';
 
 import { TracerouteMapOptions } from './types';
@@ -21,12 +21,12 @@ import { IP2Geo, IPGeo } from './geoip';
 import { rainbowPalette, round, HiddenHostsStorage } from './utils';
 import 'panel.css';
 
-interface Props extends PanelProps<TracerouteMapOptions> {}
+interface Props extends PanelProps<TracerouteMapOptions> { }
 
 interface State {
   data: Map<string, PathPoint[]>;
   series: any;
-  mapBounds: Map<string, LatLngBounds>;
+  mapBounds: Map<string, LatLngTuple[]>;
   hiddenHosts: Set<string>;
   hostListExpanded: boolean;
 }
@@ -62,6 +62,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
     };
     this.processData();
     this.handleFit = this.handleFit.bind(this);
+    this.wrapCoord = this.wrapCoord.bind(this);
   }
 
   componentDidUpdate(prevProps: Props): void {
@@ -88,14 +89,13 @@ export class TracerouteMapPanel extends Component<Props, State> {
       return;
     }
     let fields: any = {};
-    // TODO: use catersian product to handle mesh-like route paths
     ['host', 'dest', 'hop', 'ip', 'rtt', 'loss'].forEach(item => (fields[item] = null));
     for (const field of series[0].fields) {
       if (fields.hasOwnProperty(field.name)) {
         fields[field.name] = field.values.toArray();
-      } else {
+      } /* else {
         console.log('Ignoring field: ' + field.name);
-      }
+      } */
     }
     if (Object.values(fields).includes(null)) {
       console.log('Invalid query data');
@@ -109,6 +109,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       const key = `${entry[0]}|${entry[1]}`;
+      // TODO: parallelize & throttle ip2geo request 
       const hop = parseInt(entry[2], 10),
         ip = entry[3] as string,
         rtt = parseFloat(entry[4]),
@@ -129,26 +130,29 @@ export class TracerouteMapPanel extends Component<Props, State> {
       const point_id = `${round(lat, 1)},${round(lon, 1)}`;
       let point = group.get(point_id);
       if (point === undefined) {
-        point = { lat, lon: (lon + 360) % 360, region: region ?? 'unknown region', hops: [] };
+        point = { lat, lon, region: region ?? 'unknown region', hops: [] };
         group.set(point_id, point);
       }
       point.hops.push({ nth: hop, ip, label: label ?? 'unknown network', rtt, loss });
 
       // latLons.push([lat, (lon + 360) % 360]);
     }
-    let mapBounds: Map<string, LatLngBounds> = new Map();
+    let mapBounds: Map<string, LatLngTuple[]> = new Map();
     for (const [key, points] of Array.from(data.entries())) {
-      mapBounds.set(key, latLngBounds(Array.from(points.values()).map(point => [point.lat, point.lon])));
+      const bound = latLngBounds(Array.from(points.values()).map(point => [point.lat, point.lon]));
+      mapBounds.set(key, [[bound.getSouth(), bound.getWest()], [bound.getNorth(), bound.getEast()]]);
     }
+    // debugger;
     this.setState({
       data: new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())])),
       series,
       mapBounds,
     });
+
+    // TODO: use catersian product to handle non-linear route paths
   }
 
   toggleHostItem(item: string) {
-    // event.currentTarget.
     this.setState({ hiddenHosts: this.hiddenHostsStorage.toggle(item) });
   }
 
@@ -156,11 +160,12 @@ export class TracerouteMapPanel extends Component<Props, State> {
     this.mapRef.current.leafletElement.fitBounds(this.getEffectiveBounds());
   }
 
-  getEffectiveBounds() {
-    return Array.from(this.state.mapBounds.entries())
-      .filter(([key, _value]) => !this.state.hiddenHosts.has(key))
-      .map(([_key, value]) => value)
-      .reduce((prev: LatLngBounds | undefined, curr) => prev?.pad(0)?.extend(curr) ?? curr, undefined);
+  getEffectiveBounds(): LatLngBounds | undefined {
+    const tuples = Array.from(this.state.mapBounds.entries())
+    .filter(([key, _value]) => !this.state.hiddenHosts.has(key))
+    .flatMap(([_key, tuples]) => tuples)
+    .map(tuple => this.wrapCoord(tuple));
+    return tuples.length ? latLngBounds(tuples) : undefined;
   }
 
   toggleHostList() {
@@ -169,14 +174,20 @@ export class TracerouteMapPanel extends Component<Props, State> {
     });
   }
 
+  wrapCoord(coord: LatLngTuple): LatLngTuple {
+    let [lat, lon] = coord;
+    if (this.props.options.longitude360) {
+      lon = (lon + 360) % 360;
+    }
+    return [lat, lon];
+  }
+
   render() {
-    const { /*options,*/ width, height } = this.props;
+    const { width, height, options } = this.props;
     const data = this.state.data;
     let palette = rainbowPalette(data.size, 0.618);
     const effectiveBounds = this.getEffectiveBounds();
-    console.log('Map effetive bounds', effectiveBounds);
-    // data.series
-    // > select hop, ip, avg, loss from (select mean(avg) as avg, mean(loss) as loss from mtr group by hop, ip)
+    // console.log('Map effetive bounds', effectiveBounds);
     return (
       <LMap
         key={this.state.series}
@@ -191,7 +202,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
         />
-        <MarkerClusterGroup maxClusterRadius={15} /*options={{ singleMarkerMode: true }}*/>
+        <MarkerClusterGroup maxClusterRadius={options.mapClusterRadius} /*options={{ singleMarkerMode: true }}*/>
           {Array.from(data.entries()).map(([key, points]) => {
             const [host, dest] = key.split('|');
             return (
@@ -202,7 +213,8 @@ export class TracerouteMapPanel extends Component<Props, State> {
                 points={points}
                 color={palette()}
                 visible={!this.state.hiddenHosts.has(key)}
-              ></TraceRouteMarkers>
+                wrapCoord={this.wrapCoord}
+              />
             );
           })}
         </MarkerClusterGroup>
@@ -229,10 +241,10 @@ export class TracerouteMapPanel extends Component<Props, State> {
               </ul>
             </>
           ) : (
-            <span className="host-list-toggler host-list-expand" onClick={() => this.toggleHostList()}>
-              <Icon name="expand"></Icon>
-            </span>
-          )}
+              <span className="host-list-toggler host-list-expand" onClick={() => this.toggleHostList()}>
+                <Icon name="expand"></Icon>
+              </span>
+            )}
         </Control>
         <Control position="topright">
           <Button variant="primary" size="md" onClick={this.handleFit}>
@@ -245,17 +257,28 @@ export class TracerouteMapPanel extends Component<Props, State> {
   }
 }
 
-const TraceRouteMarkers: React.FC<{ host: string; dest: string; points: PathPoint[]; color: string; visible: boolean }> = ({
+// Traceroute for one host->dest pair
+const TraceRouteMarkers: React.FC<{ host: string; dest: string; points: PathPoint[]; color: string; visible: boolean; wrapCoord?: (coord: LatLngTuple) => LatLngTuple }> = ({
   host,
   dest,
   points,
   color,
   visible,
+  wrapCoord
 }) => {
+  // const wrapCoord = longitude360 ? (lon: number) => (lon + 360) % 360 : (lon: number) => lon;
+  let wrapCoord_: (coord: LatLngTuple) => LatLngTuple;
+  if (wrapCoord === undefined) {
+    wrapCoord_ = (coord: LatLngTuple) => coord;
+  }
+  else {
+    wrapCoord_ = wrapCoord;
+  }
+
   return visible ? (
     <div data-host={host} data-dest={dest} data-points={points.length}>
       {points.map(point => (
-        <Marker key={point.region} position={[point.lat, point.lon]} className="point-marker">
+        <Marker key={point.region} position={wrapCoord_([point.lat, point.lon])} className="point-marker">
           <Popup className="point-popup">
             <span className="point-label">{point.region}</span>
             <hr />
@@ -271,14 +294,14 @@ const TraceRouteMarkers: React.FC<{ host: string; dest: string; points: PathPoin
             </ul>
             <hr />
             <span className="host-label">{host}</span>
-            <span className="host-arrow">&nbsp; ➡️ &nbsp;</span>
+            <span className="host-arrow" style={{ color }}>&nbsp; ➡️ &nbsp;</span>
             <span className="dest-label">{dest}</span>
           </Popup>
         </Marker>
       ))}
-      <Polyline positions={points.map(point => [point.lat, (point.lon + 360) % 360] as LatLngTuple)} color={color}></Polyline>
+      <Polyline positions={points.map(point => wrapCoord_([point.lat, point.lon]) as LatLngTuple)} color={color}></Polyline>
     </div>
   ) : (
-    <></>
-  );
+      <></>
+    );
 };

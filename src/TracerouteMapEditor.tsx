@@ -1,12 +1,12 @@
 import React, { PureComponent, ChangeEvent } from 'react';
-import { Forms } from '@grafana/ui';
+import { Forms, Slider } from '@grafana/ui';
 import { PanelEditorProps, SelectableValue } from '@grafana/data';
 
 import { TracerouteMapOptions } from './types';
 import { GeoIPProviderKind, GeoIPProvider, IPInfo, CustomAPI, IP2Geo, CustomFunction } from './geoip';
 import { CodeSnippets, timeout } from './utils';
 
-interface Props extends PanelEditorProps<TracerouteMapOptions> {}
+interface Props extends PanelEditorProps<TracerouteMapOptions> { }
 
 interface State {
   geoIPProvider: GeoIPProvider;
@@ -24,9 +24,10 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
     this.handleGeoIPProviderChange = this.handleGeoIPProviderChange.bind(this);
     this.handleTestAndSave = this.handleTestAndSave.bind(this);
     this.handleClearGeoIPCache = this.handleClearGeoIPCache.bind(this);
+    this.handleLongitude360Switched = this.handleLongitude360Switched.bind(this);
   }
 
-  onGeoIPProviderSelected = (option: SelectableValue<GeoIPProviderKind>) => {
+  handleGeoIPProviderSelected = (option: SelectableValue<GeoIPProviderKind>) => {
     this.setState({ geoIPProvider: this.props.options.geoIPProviders[option.value ?? 'ipsb'], test: { pending: false } });
   };
 
@@ -70,47 +71,77 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
     }
   }
 
-  render() {
-    return (
-      <div className="section gf-form-group">
-        <h5 className="section-header">GeoIP</h5>
-        <div style={{ width: 500 }}>
-          <Forms.Field label="Provider">
-            <Forms.Select options={geoIPOptions} value={this.state.geoIPProvider.kind} onChange={this.onGeoIPProviderSelected} />
-          </Forms.Field>
-          {(() => {
-            switch (this.state.geoIPProvider.kind) {
-              case 'ipinfo':
-                return <IPInfoConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />;
-              case 'ipsb':
-                return <IPSBConfig />;
-              case 'custom-api':
-                return <CustomAPIConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />;
-              case 'custom-function':
-                return <CustomFunctionConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />;
-            }
-          })()}
-        </div>
-        <Forms.Button icon={this.state.test.pending ? 'fa fa-spinner fa-spin' : undefined} onClick={this.handleTestAndSave}>
-          Test and Save
-        </Forms.Button>
-        <span style={{ marginLeft: '0.5em', marginRight: '0.5em' }}></span>
-        <Forms.Button variant="secondary" onClick={this.handleClearGeoIPCache}>
-          Clear Cache
-        </Forms.Button>
+  handleLongitude360Switched(value: boolean) {
+    this.props.onOptionsChange({ ...this.props.options, longitude360: value });
+  }
 
-        {this.state.test.title ? (
-          <Forms.Field label="">
+  handleMapClusterRadius(value: number) {
+    this.props.onOptionsChange({ ...this.props.options, mapClusterRadius: value });
+  }
+
+  render() {
+    const options = this.props.options;
+
+    return (
+      <div className="traceroute-map-editor">
+        <div className="section gf-form-group">
+          <h5 className="section-header">General</h5>
+          <div style={{ width: 300 }}>
+            <Forms.Field label="Wrap longitude to [0°, 360°)" description="So that it won't lay within [-180°, 0°)">
+              <Forms.Switch checked={options.longitude360} onChange={(event) => this.handleLongitude360Switched(event?.currentTarget.checked ?? false)} />
+            </Forms.Field>
+            <Forms.Field label="Cluster Radius" description="Merge close points within a radius into one circle">
+              <Slider min={5} max={50} value={[this.props.options.mapClusterRadius]} onChange={(value) => this.handleMapClusterRadius(value[0])} />
+            </Forms.Field>
+            <Forms.Field label="Note">
+              <span>Some options won't take effect until the panel/page is refreshed.</span>
+            </Forms.Field>
+          </div>
+        </div>
+        <div className="section gf-form-group">
+          <h5 className="section-header">GeoIP</h5>
+          <div style={{ width: 400 }}>
+            <Forms.Field label="Provider">
+              <Forms.Select options={geoIPOptions} value={this.state.geoIPProvider.kind} onChange={this.handleGeoIPProviderSelected} />
+            </Forms.Field>
+            {(() => {
+              switch (this.state.geoIPProvider.kind) {
+                case 'ipinfo':
+                  return <IPInfoConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />;
+                case 'ipsb':
+                  return <IPSBConfig />;
+                case 'custom-api':
+                  return <CustomAPIConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />;
+                case 'custom-function':
+                  return <CustomFunctionConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />;
+              }
+            })()}
+          </div>
+          <Forms.Field>
             <>
-              <span style={{ fontWeight: 'bold' }}>{this.state.test.title}</span>
-              <pre>
-                <code>{this.state.test.output}</code>
-              </pre>
+            <Forms.Button icon={this.state.test.pending ? 'fa fa-spinner fa-spin' : undefined} onClick={this.handleTestAndSave}>
+              Test and Save
+            </Forms.Button>
+            <span style={{ marginLeft: '0.5em', marginRight: '0.5em' }}></span>
+            <Forms.Button variant="secondary" onClick={this.handleClearGeoIPCache}>
+              Clear Cache
+            </Forms.Button>
             </>
           </Forms.Field>
-        ) : (
-          <></>
-        )}
+
+          {this.state.test.title ? (
+            <Forms.Field label="">
+              <>
+                <span style={{ fontWeight: 'bold' }}>{this.state.test.title}</span>
+                <pre>
+                  <code>{this.state.test.output}</code>
+                </pre>
+              </>
+            </Forms.Field>
+          ) : (
+              <></>
+            )}
+        </div>
       </div>
     );
   }

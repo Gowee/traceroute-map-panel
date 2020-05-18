@@ -8,6 +8,8 @@ export interface TracerouteMapOptions {
     'custom-api': CustomAPI;
     'custom-function': CustomFunction;
   };
+  longitude360: boolean;
+  mapClusterRadius: number;
 }
 
 export const defaults: TracerouteMapOptions = {
@@ -15,4 +17,6 @@ export const defaults: TracerouteMapOptions = {
     active: 'ipsb',
     ...(Object.fromEntries(['ipsb', 'ipinfo', 'custom-api', 'custom-function'].map(p => [p, { kind: p }])) as any),
   },
+  longitude360: false,
+  mapClusterRadius: 15
 };

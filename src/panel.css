@@ -64,3 +64,7 @@
     /* aliceblue */
     color: rgba(240, 248, 255, 0.618);
 }
+
+.traceroute-map-editor a {
+    color: darkblue;
+}
