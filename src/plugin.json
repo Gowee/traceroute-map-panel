@@ -4,18 +4,18 @@
   "id": "gowee-traceroute-map-panel",
 
   "info": {
-    "description": "Simple React Panel",
+    "description": "A Grafana panel that visualize traceroute hops in a map",
     "author": {
       "name": "Gowee"
     },
-    "keywords": ["Simple"],
+    "keywords": ["traceroute", "map", "mtr"],
     "logos": {
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
     "links": [
-      {"name": "Website", "url": "https://github.com/grafana/simple-react-panel"},
-      {"name": "License", "url": "https://github.com/grafana/simple-react-panel/blob/master/LICENSE"}
+      {"name": "Website", "url": "https://github.com/Gowee/traceroute-map-panel"},
+      {"name": "License", "url": "https://github.com/Gowee/traceroute-map-panel/blob/master/LICENSE"}
     ],
     "screenshots": [],
     "version": "%VERSION%",

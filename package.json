@@ -1,19 +1,19 @@
 {
-  "name": "simple-react-panel",
-  "version": "1.0.0",
-  "description": "Simple React Panel",
+  "name": "traceroute-map-panel",
+  "version": "0.1.0",
+  "description": "A Grafana panel that visualize traceroute hops in a map",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
     "test": "grafana-toolkit plugin:test",
     "dev": "grafana-toolkit plugin:dev",
     "watch": "grafana-toolkit plugin:dev --watch"
   },
-  "repository": "github:grafana/simple-react-panel",
-  "author": "Grafana Labs <team@grafana.com> (https://grafana.com)",
+  "repository": "github:gowee/traceroute-map-panel",
+  "author": "Hung-I Wang <whygowe@gmail.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/grafana/simple-react-panel/issues",
-    "email": "plugins@grafana.com"
+    "url": "https://github.com/gowee/traceroute-map-panel/issues",
+    "email": "whygowe@gmail.com"
   },
   "devDependencies": {
     "@grafana/data": "latest",
