@@ -68,3 +68,27 @@
 .traceroute-map-editor a {
     color: darkblue;
 }
+
+.map-indicator {
+    font-size: 12px;
+    margin: 4px 0 0 0;
+    padding: 4px 8px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.map-indicator > i:first-child {
+    margin-right: 0.5em;
+}
+
+.map-indicator.error {
+    /* 500 */
+    font-weight: bold;
+    color: #ffffff;
+    background: #e02f44;
+}
+
+.map-indicator.loading {
+    color: black;
+    background: rgba(240, 248, 255, 0.618);
+}

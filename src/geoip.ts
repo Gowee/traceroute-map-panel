@@ -83,6 +83,9 @@ export class IP2Geo {
     // TODO: sanitize API query result
 
     async function ip2geo(ip: string, noCache = false): Promise<IPGeo> {
+      // if (Math.random() > 0.95) {
+      //   throw new Error("Boom test");
+      // }
       if (isValidIPAddress(ip)) {
         let geo = noCache ? undefined : (Cache.get(ip) as IPGeo);
         if (geo === undefined) {

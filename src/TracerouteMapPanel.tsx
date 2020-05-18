@@ -1,5 +1,5 @@
 import React, { Component, createRef, MouseEvent } from 'react';
-import { PanelProps, LoadingState } from '@grafana/data';
+import { PanelProps, LoadingState, DataFrame } from '@grafana/data';
 import { Icon, Button } from '@grafana/ui';
 // import { keys } from 'ts-transformer-keys';
 import _ from 'lodash';
@@ -29,6 +29,7 @@ interface State {
   mapBounds: Map<string, LatLngTuple[]>;
   hiddenHosts: Set<string>;
   hostListExpanded: boolean;
+  indicator?: "loading" | "error";
 }
 
 interface PathPoint {
@@ -60,7 +61,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
       hiddenHosts: this.hiddenHostsStorage.load(),
       hostListExpanded: true,
     };
-    this.processData();
+    this.updateData();
     this.handleFit = this.handleFit.bind(this);
     this.wrapCoord = this.wrapCoord.bind(this);
   }
@@ -78,15 +79,32 @@ export class TracerouteMapPanel extends Component<Props, State> {
       this.mapRef.current.leafletElement.invalidateSize();
     }
     if (this.props.data.series !== this.state.series && this.props.data.state === LoadingState.Done) {
-      this.processData();
+      this.updateData()
     }
   }
 
-  async processData(): Promise<void> {
-    const series = this.props.data.series;
+  async updateData(): Promise<void> {
+    console.log("loading");
+    this.setState({ 'indicator': "loading", series: this.props.data.series });
+    try {
+      const {data, mapBounds} = await this.processData(this.props.data.series) ;
+      this.setState({ 'indicator': undefined, data, mapBounds })
+    }
+    catch (e) {
+      this.setState({ 'indicator': "error" });
+      console.log(e);
+    }
+    
+    // this.setState();
+    // this.processData()
+    //   .then(({ data, mapBounds }) => this.setState({ 'indicator': undefined, data, mapBounds }))
+    //   .catch((e) => { this.setState({ 'indicator': "error" }); console.log(e); });
+  }
+
+  async processData(series: DataFrame[]): Promise<{ data: Map<string, PathPoint[]>, mapBounds: Map<string, LatLngTuple[]> }> {
+    // const series = this.props.data.series;
     if (series.length !== 1 || series[0].fields.length !== 7) {
-      console.log('No query data or not formatted as table.');
-      return;
+      throw new Error("No query data or not formatted as table.");
     }
     let fields: any = {};
     ['host', 'dest', 'hop', 'ip', 'rtt', 'loss'].forEach(item => (fields[item] = null));
@@ -98,8 +116,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
       } */
     }
     if (Object.values(fields).includes(null)) {
-      console.log('Invalid query data');
-      return;
+      throw new Error("Invalid query data");
     }
     let entries = _.zip(fields.host, fields.dest, fields.hop, fields.ip, fields.rtt, fields.loss) as Array<
       [string, string, string, string, string, string]
@@ -119,7 +136,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
         // implying invalid or LAN IP
         continue;
       }
-      // TODO: shadowing?
+      // TODO: shadowing variable names?
       const lat = lat_ ?? 0,
         lon = lon_ ?? 0;
       let group = data.get(key);
@@ -134,20 +151,17 @@ export class TracerouteMapPanel extends Component<Props, State> {
         group.set(point_id, point);
       }
       point.hops.push({ nth: hop, ip, label: label ?? 'unknown network', rtt, loss });
-
-      // latLons.push([lat, (lon + 360) % 360]);
     }
     let mapBounds: Map<string, LatLngTuple[]> = new Map();
     for (const [key, points] of Array.from(data.entries())) {
       const bound = latLngBounds(Array.from(points.values()).map(point => [point.lat, point.lon]));
       mapBounds.set(key, [[bound.getSouth(), bound.getWest()], [bound.getNorth(), bound.getEast()]]);
     }
-    // debugger;
-    this.setState({
+    return {
       data: new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())])),
-      series,
+      // series,
       mapBounds,
-    });
+    };
 
     // TODO: use catersian product to handle non-linear route paths
   }
@@ -162,9 +176,9 @@ export class TracerouteMapPanel extends Component<Props, State> {
 
   getEffectiveBounds(): LatLngBounds | undefined {
     const tuples = Array.from(this.state.mapBounds.entries())
-    .filter(([key, _value]) => !this.state.hiddenHosts.has(key))
-    .flatMap(([_key, tuples]) => tuples)
-    .map(tuple => this.wrapCoord(tuple));
+      .filter(([key, _value]) => !this.state.hiddenHosts.has(key))
+      .flatMap(([_key, tuples]) => tuples)
+      .map(tuple => this.wrapCoord(tuple));
     return tuples.length ? latLngBounds(tuples) : undefined;
   }
 
@@ -242,15 +256,37 @@ export class TracerouteMapPanel extends Component<Props, State> {
             </>
           ) : (
               <span className="host-list-toggler host-list-expand" onClick={() => this.toggleHostList()}>
-                <Icon name="expand"></Icon>
+                <Icon name="expand" />
               </span>
             )}
         </Control>
         <Control position="topright">
-          <Button variant="primary" size="md" onClick={this.handleFit}>
-            {/* FIX: @grafana/ui Button keeps active state */}
-            Fit
-          </Button>
+          {
+            (() => {
+              switch (this.state.indicator) {
+                case undefined:
+                  return (
+                    <Button variant="primary" size="md" onClick={this.handleFit}>
+                      {/* FIX: @grafana/ui Button keeps active state */}
+                      Fit
+                    </Button>);
+                case 'loading':
+                  return (
+                    <span className="map-indicator loading">
+                      <i className="fa fa-spinner fa-spin" />
+                      Loading
+                    </span>
+                  );
+                case 'error':
+                  return (
+                    <span className="map-indicator error">
+                      <i className="fa fa-warning" />
+                      Error processing data
+                    </span>
+                  );
+              }
+            })()
+          }
         </Control>
       </LMap>
     );
@@ -305,3 +341,5 @@ const TraceRouteMarkers: React.FC<{ host: string; dest: string; points: PathPoin
       <></>
     );
 };
+
+console.log(Button);
