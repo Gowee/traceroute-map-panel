@@ -29,14 +29,14 @@
     color: rgba(0, 0, 0, 1.0);
 }
 
-.host-arrow {
+.host-list .host-arrow {
     margin-left: 0.5em;
     margin-right: 0.5em;
     position: relative;
     top: 2px;
 }
 
-.host-label, .dest-label {
+.host-list .host-label, .host-list .dest-label {
     display: inline-block;
     width: 8em;
     overflow: hidden;
