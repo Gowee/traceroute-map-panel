@@ -40,9 +40,24 @@ export interface IPGeo {
 }
 
 // const cache = new LRUCache({ max: 1024, maxAge: 8 * 60 * 60 * 1000 });
-const cache = {
-  get: (key: string) => JSON.parse(sessionStorage.getItem(`${PACKAGE.NAME}-geoip-${key}`) ?? 'null') ?? undefined,
-  set: (key: string, value: IPGeo) => sessionStorage.setItem(`${PACKAGE.NAME}-geoip-${key}`, JSON.stringify(value)),
+const Cache = {
+  get: (key: string) => JSON.parse(sessionStorage.getItem(`${PACKAGE.name}-geoip-${key}`) ?? 'null') ?? undefined,
+  set: (key: string, value: IPGeo) => sessionStorage.setItem(`${PACKAGE.name}-geoip-${key}`, JSON.stringify(value)),
+  clear: (indiscriminate = false) => {
+    let count = 0;
+    if (indiscriminate) {
+      count = sessionStorage.length;
+      sessionStorage.clear();
+    } else {
+      for (const entry in sessionStorage) {
+        if (entry.startsWith(`${PACKAGE.name}-geoip`)) {
+          sessionStorage.removeItem(entry);
+          count += 1;
+        }
+      }
+    }
+    return count;
+  },
 };
 
 export class IP2Geo {
@@ -68,14 +83,12 @@ export class IP2Geo {
     // TODO: sanitize API query result
 
     async function ip2geo(ip: string, noCache = false): Promise<IPGeo> {
-      console.log(ip, isValidIPAddress(ip));
       if (isValidIPAddress(ip)) {
-        let geo = noCache ? undefined : (cache.get(ip) as IPGeo);
+        let geo = noCache ? undefined : (Cache.get(ip) as IPGeo);
         if (geo === undefined) {
           geo = await fn(ip);
-          cache.set(ip, geo);
+          Cache.set(ip, geo);
         }
-        console.log('geo', geo);
         return geo;
       }
       return {};
@@ -109,12 +122,13 @@ export class IP2Geo {
   }
 
   static async GenericAPI(url: string, ip: string): Promise<IPGeo> {
-    console.log(url);
     const r = await fetch(url.replace('{IP}', ip), { headers: { Accept: 'application/json' } });
-    console.log(url.replace('{IP}', ip));
     const data = await r.json();
-    console.log(data);
     return data;
+  }
+
+  static clearCache(): number {
+    return Cache.clear();
   }
 }
 

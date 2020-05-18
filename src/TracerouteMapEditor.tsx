@@ -21,14 +21,10 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
       geoIPProvider: options.geoIPProviders[options.geoIPProviders.active],
       test: { pending: false },
     };
-    console.log(this.props.options);
     this.handleGeoIPProviderChange = this.handleGeoIPProviderChange.bind(this);
     this.handleTestAndSave = this.handleTestAndSave.bind(this);
+    this.handleClearGeoIPCache = this.handleClearGeoIPCache.bind(this);
   }
-
-  // onTextChanged = ({ target }: any) => {
-  //   this.props.onOptionsChange({ ...this.props.options, text: target.value });
-  // };
 
   onGeoIPProviderSelected = (option: SelectableValue<GeoIPProviderKind>) => {
     this.setState({ geoIPProvider: this.props.options.geoIPProviders[option.value ?? 'ipsb'], test: { pending: false } });
@@ -63,9 +59,18 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
     }
   }
 
+  handleClearGeoIPCache() {
+    if (
+      confirm(
+        "Clear all the GeoIP cache now?\n\nNote: This won't trigger refreshing the panel.\nBy default, cache are stored in sesseionStorage which is cleaned up when the browser session ends."
+      )
+    ) {
+      const count = IP2Geo.clearCache();
+      alert(`${count} entries cleaned.`);
+    }
+  }
+
   render() {
-    const { options } = this.props;
-    console.log(options);
     return (
       <div className="section gf-form-group">
         <h5 className="section-header">GeoIP</h5>
@@ -76,7 +81,6 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
           {(() => {
             switch (this.state.geoIPProvider.kind) {
               case 'ipinfo':
-                console.log('ipinfo...', this.props.options.geoIPProviders);
                 return <IPInfoConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />;
               case 'ipsb':
                 return <IPSBConfig />;
@@ -89,6 +93,10 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
         </div>
         <Forms.Button icon={this.state.test.pending ? 'fa fa-spinner fa-spin' : undefined} onClick={this.handleTestAndSave}>
           Test and Save
+        </Forms.Button>
+        <span style={{ marginLeft: '0.5em', marginRight: '0.5em' }}></span>
+        <Forms.Button variant="secondary" onClick={this.handleClearGeoIPCache}>
+          Clear Cache
         </Forms.Button>
 
         {this.state.test.title ? (

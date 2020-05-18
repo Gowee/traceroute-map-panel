@@ -21,7 +21,7 @@ import { IP2Geo, IPGeo } from './geoip';
 import { rainbowPalette, round, HiddenHostsStorage } from './utils';
 import 'panel.css';
 
-interface Props extends PanelProps<TracerouteMapOptions> { }
+interface Props extends PanelProps<TracerouteMapOptions> {}
 
 interface State {
   data: Map<string, PathPoint[]>;
@@ -229,10 +229,10 @@ export class TracerouteMapPanel extends Component<Props, State> {
               </ul>
             </>
           ) : (
-              <span className="host-list-toggler host-list-expand" onClick={() => this.toggleHostList()}>
-                <Icon name="expand"></Icon>
-              </span>
-            )}
+            <span className="host-list-toggler host-list-expand" onClick={() => this.toggleHostList()}>
+              <Icon name="expand"></Icon>
+            </span>
+          )}
         </Control>
         <Control position="topright">
           <Button variant="primary" size="md" onClick={this.handleFit}>
@@ -279,6 +279,6 @@ const TraceRouteMarkers: React.FC<{ host: string; dest: string; points: PathPoin
       <Polyline positions={points.map(point => [point.lat, (point.lon + 360) % 360] as LatLngTuple)} color={color}></Polyline>
     </div>
   ) : (
-      <></>
-    );
+    <></>
+  );
 };
