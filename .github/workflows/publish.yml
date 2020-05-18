@@ -43,28 +43,30 @@ jobs:
         #   - Second Change
         draft: false
         prerelease: false
+    - name: Get tag
+      id: get_tag
+      run: echo ::set-output name=TAG::${GITHUB_REF/refs\/tags\//}
     - name: Upload Release Asset - Dist
       id: upload-release-asset-dist
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_REF: ${{ github.ref }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
         asset_path: /tmp/dist.tar.gz
-        asset_name: dist-${GITHUB_REF##*/}.tar.gz
+        asset_name: dist-${{ steps.get_version.outputs.VERSION }}.tar.gz
         asset_content_type: application/tar+gzip
     - name: Upload Release Asset - Src
       id: upload-release-asset-src  
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_REF: ${{ github.ref }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
         asset_path: /tmp/src.tar.gz
-        asset_name: src-${GITHUB_REF##*/}.tar.gz
+        asset_name: src-${{ steps.get_version.outputs.VERSION }}.tar.gz
         asset_content_type: application/tar+gzip
 
 # Adapted from: https://github.com/actions/create-release
 #          and: https://github.com/actions/upload-release-asset
+#          and: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167#M1027
