@@ -26,9 +26,9 @@ jobs:
       run:
         yarn build
     - name: Create tarball
-      run: |
+      run: 
         tar czf /tmp/dist.tar.gz --transform s/^dist/traceroute-map-panel/ dist/
-        git archive --format=tar.gz -o /tmp/src.tar.gz --prefix=traceroute-map-panel/ ${{ github.ref }}
+        # git archive --format=tar.gz -o /tmp/src.tar.gz --prefix=traceroute-map-panel/ ${{ github.ref }}
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -58,16 +58,16 @@ jobs:
         asset_path: /tmp/dist.tar.gz
         asset_name: dist-${{ steps.get_tag.outputs.TAG }}.tar.gz
         asset_content_type: application/tar+gzip
-    - name: Upload Release Asset - Src
-      id: upload-release-asset-src  
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: /tmp/src.tar.gz
-        asset_name: src-${{ steps.get_tag.outputs.TAG }}.tar.gz
-        asset_content_type: application/tar+gzip
+    # - name: Upload Release Asset - Src
+    #   id: upload-release-asset-src  
+    #   uses: actions/upload-release-asset@v1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   with:
+    #     upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+    #     asset_path: /tmp/src.tar.gz
+    #     asset_name: src-${{ steps.get_tag.outputs.TAG }}.tar.gz
+    #     asset_content_type: application/tar+gzip
 
 # Adapted from: https://github.com/actions/create-release
 #          and: https://github.com/actions/upload-release-asset
