@@ -1,10 +1,10 @@
+name: Publish
+
 on:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
-
-name: Publish
 
 jobs:
   build:
@@ -20,9 +20,9 @@ jobs:
         run:
           yarn build
       - name: Create tarball
-        run:
-          - tar czf /tmp/dist.tar.gz --transform s/^dist/traceroute-map-panel/ dist/
-          - git archive --format=tar.gz -o /tmp/src.tar.gz --prefix=traceroute-map-panel/ ${{ github.ref }}
+        run: |
+          tar czf /tmp/dist.tar.gz --transform s/^dist/traceroute-map-panel/ dist/
+          git archive --format=tar.gz -o /tmp/src.tar.gz --prefix=traceroute-map-panel/ ${{ github.ref }}
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
