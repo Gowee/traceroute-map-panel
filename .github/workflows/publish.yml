@@ -45,6 +45,8 @@ jobs:
         prerelease: false
     - name: Get tag
       id: get_tag
+      env:
+        GITHUB_REF: ${{ github.ref }}
       run: echo ::set-output name=TAG::${GITHUB_REF/refs\/tags\//}
     - name: Upload Release Asset - Dist
       id: upload-release-asset-dist
