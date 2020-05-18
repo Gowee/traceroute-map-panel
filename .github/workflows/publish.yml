@@ -48,6 +48,7 @@ jobs:
           asset_content_type: application/tar+gzip
       - name: Upload Release Asset - Src
         id: upload-release-asset-src
+        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
