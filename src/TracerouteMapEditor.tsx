@@ -6,7 +6,7 @@ import { TracerouteMapOptions } from './types';
 import { GeoIPProviderKind, GeoIPProvider, IPInfo, CustomAPI, IP2Geo, CustomFunction } from './geoip';
 import { CodeSnippets, timeout } from './utils';
 
-interface Props extends PanelEditorProps<TracerouteMapOptions> { }
+interface Props extends PanelEditorProps<TracerouteMapOptions> {}
 
 interface State {
   geoIPProvider: GeoIPProvider;
@@ -88,10 +88,13 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
           <h5 className="section-header">General</h5>
           <div style={{ width: 300 }}>
             <Forms.Field label="Wrap longitude to [0°, 360°)" description="So that it won't lay within [-180°, 0°)">
-              <Forms.Switch checked={options.longitude360} onChange={(event) => this.handleLongitude360Switched(event?.currentTarget.checked ?? false)} />
+              <Forms.Switch
+                checked={options.longitude360}
+                onChange={event => this.handleLongitude360Switched(event?.currentTarget.checked ?? false)}
+              />
             </Forms.Field>
             <Forms.Field label="Cluster Radius" description="Merge close points within a radius into one circle">
-              <Slider min={5} max={50} value={[this.props.options.mapClusterRadius]} onChange={(value) => this.handleMapClusterRadius(value[0])} />
+              <Slider min={5} max={50} value={[this.props.options.mapClusterRadius]} onChange={value => this.handleMapClusterRadius(value[0])} />
             </Forms.Field>
             <Forms.Field label="Note">
               <span>Some options won't take effect until the panel/page is refreshed.</span>
@@ -119,13 +122,13 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
           </div>
           <Forms.Field>
             <>
-            <Forms.Button icon={this.state.test.pending ? 'fa fa-spinner fa-spin' : undefined} onClick={this.handleTestAndSave}>
-              Test and Save
-            </Forms.Button>
-            <span style={{ marginLeft: '0.5em', marginRight: '0.5em' }}></span>
-            <Forms.Button variant="secondary" onClick={this.handleClearGeoIPCache}>
-              Clear Cache
-            </Forms.Button>
+              <Forms.Button icon={this.state.test.pending ? 'fa fa-spinner fa-spin' : undefined} onClick={this.handleTestAndSave}>
+                Test and Save
+              </Forms.Button>
+              <span style={{ marginLeft: '0.5em', marginRight: '0.5em' }}></span>
+              <Forms.Button variant="secondary" onClick={this.handleClearGeoIPCache}>
+                Clear Cache
+              </Forms.Button>
             </>
           </Forms.Field>
 
@@ -139,8 +142,8 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
               </>
             </Forms.Field>
           ) : (
-              <></>
-            )}
+            <></>
+          )}
         </div>
       </div>
     );

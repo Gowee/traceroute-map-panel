@@ -18,5 +18,5 @@ export const defaults: TracerouteMapOptions = {
     ...(Object.fromEntries(['ipsb', 'ipinfo', 'custom-api', 'custom-function'].map(p => [p, { kind: p }])) as any),
   },
   longitude360: false,
-  mapClusterRadius: 15
+  mapClusterRadius: 15,
 };

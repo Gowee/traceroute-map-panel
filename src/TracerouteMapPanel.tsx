@@ -21,7 +21,7 @@ import { IP2Geo, IPGeo } from './geoip';
 import { rainbowPalette, round, HiddenHostsStorage } from './utils';
 import 'panel.css';
 
-interface Props extends PanelProps<TracerouteMapOptions> { }
+interface Props extends PanelProps<TracerouteMapOptions> {}
 
 interface State {
   data: Map<string, PathPoint[]>;
@@ -29,7 +29,7 @@ interface State {
   mapBounds: Map<string, LatLngTuple[]>;
   hiddenHosts: Set<string>;
   hostListExpanded: boolean;
-  indicator?: "loading" | "error";
+  indicator?: 'loading' | 'error';
 }
 
 interface PathPoint {
@@ -79,32 +79,25 @@ export class TracerouteMapPanel extends Component<Props, State> {
       this.mapRef.current.leafletElement.invalidateSize();
     }
     if (this.props.data.series !== this.state.series && this.props.data.state === LoadingState.Done) {
-      this.updateData()
+      this.updateData();
     }
   }
 
   async updateData(): Promise<void> {
-    console.log("loading");
-    this.setState({ 'indicator': "loading", series: this.props.data.series });
+    console.log('loading');
+    this.setState({ indicator: 'loading', series: this.props.data.series });
     try {
-      const {data, mapBounds} = await this.processData(this.props.data.series) ;
-      this.setState({ 'indicator': undefined, data, mapBounds })
-    }
-    catch (e) {
-      this.setState({ 'indicator': "error" });
+      const { data, mapBounds } = await this.processData(this.props.data.series);
+      this.setState({ indicator: undefined, data, mapBounds });
+    } catch (e) {
+      this.setState({ indicator: 'error' });
       console.log(e);
     }
-    
-    // this.setState();
-    // this.processData()
-    //   .then(({ data, mapBounds }) => this.setState({ 'indicator': undefined, data, mapBounds }))
-    //   .catch((e) => { this.setState({ 'indicator': "error" }); console.log(e); });
   }
 
-  async processData(series: DataFrame[]): Promise<{ data: Map<string, PathPoint[]>, mapBounds: Map<string, LatLngTuple[]> }> {
-    // const series = this.props.data.series;
+  async processData(series: DataFrame[]): Promise<{ data: Map<string, PathPoint[]>; mapBounds: Map<string, LatLngTuple[]> }> {
     if (series.length !== 1 || series[0].fields.length !== 7) {
-      throw new Error("No query data or not formatted as table.");
+      throw new Error('No query data or not formatted as table.');
     }
     let fields: any = {};
     ['host', 'dest', 'hop', 'ip', 'rtt', 'loss'].forEach(item => (fields[item] = null));
@@ -116,7 +109,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
       } */
     }
     if (Object.values(fields).includes(null)) {
-      throw new Error("Invalid query data");
+      throw new Error('Invalid query data');
     }
     let entries = _.zip(fields.host, fields.dest, fields.hop, fields.ip, fields.rtt, fields.loss) as Array<
       [string, string, string, string, string, string]
@@ -126,7 +119,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       const key = `${entry[0]}|${entry[1]}`;
-      // TODO: parallelize & throttle ip2geo request 
+      // TODO: parallelize & throttle ip2geo request
       const hop = parseInt(entry[2], 10),
         ip = entry[3] as string,
         rtt = parseFloat(entry[4]),
@@ -155,7 +148,10 @@ export class TracerouteMapPanel extends Component<Props, State> {
     let mapBounds: Map<string, LatLngTuple[]> = new Map();
     for (const [key, points] of Array.from(data.entries())) {
       const bound = latLngBounds(Array.from(points.values()).map(point => [point.lat, point.lon]));
-      mapBounds.set(key, [[bound.getSouth(), bound.getWest()], [bound.getNorth(), bound.getEast()]]);
+      mapBounds.set(key, [
+        [bound.getSouth(), bound.getWest()],
+        [bound.getNorth(), bound.getEast()],
+      ]);
     }
     return {
       data: new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())])),
@@ -255,38 +251,37 @@ export class TracerouteMapPanel extends Component<Props, State> {
               </ul>
             </>
           ) : (
-              <span className="host-list-toggler host-list-expand" onClick={() => this.toggleHostList()}>
-                <Icon name="expand" />
-              </span>
-            )}
+            <span className="host-list-toggler host-list-expand" onClick={() => this.toggleHostList()}>
+              <Icon name="expand" />
+            </span>
+          )}
         </Control>
         <Control position="topright">
-          {
-            (() => {
-              switch (this.state.indicator) {
-                case undefined:
-                  return (
-                    <Button variant="primary" size="md" onClick={this.handleFit}>
-                      {/* FIX: @grafana/ui Button keeps active state */}
-                      Fit
-                    </Button>);
-                case 'loading':
-                  return (
-                    <span className="map-indicator loading">
-                      <i className="fa fa-spinner fa-spin" />
-                      Loading
-                    </span>
-                  );
-                case 'error':
-                  return (
-                    <span className="map-indicator error">
-                      <i className="fa fa-warning" />
-                      Error processing data
-                    </span>
-                  );
-              }
-            })()
-          }
+          {(() => {
+            switch (this.state.indicator) {
+              case undefined:
+                return (
+                  <Button variant="primary" size="md" onClick={this.handleFit}>
+                    {/* FIX: @grafana/ui Button keeps active state */}
+                    Fit
+                  </Button>
+                );
+              case 'loading':
+                return (
+                  <span className="map-indicator loading">
+                    <i className="fa fa-spinner fa-spin" />
+                    Loading
+                  </span>
+                );
+              case 'error':
+                return (
+                  <span className="map-indicator error">
+                    <i className="fa fa-warning" />
+                    Error processing data
+                  </span>
+                );
+            }
+          })()}
         </Control>
       </LMap>
     );
@@ -294,20 +289,18 @@ export class TracerouteMapPanel extends Component<Props, State> {
 }
 
 // Traceroute for one host->dest pair
-const TraceRouteMarkers: React.FC<{ host: string; dest: string; points: PathPoint[]; color: string; visible: boolean; wrapCoord?: (coord: LatLngTuple) => LatLngTuple }> = ({
-  host,
-  dest,
-  points,
-  color,
-  visible,
-  wrapCoord
-}) => {
-  // const wrapCoord = longitude360 ? (lon: number) => (lon + 360) % 360 : (lon: number) => lon;
+const TraceRouteMarkers: React.FC<{
+  host: string;
+  dest: string;
+  points: PathPoint[];
+  color: string;
+  visible: boolean;
+  wrapCoord?: (coord: LatLngTuple) => LatLngTuple;
+}> = ({ host, dest, points, color, visible, wrapCoord }) => {
   let wrapCoord_: (coord: LatLngTuple) => LatLngTuple;
   if (wrapCoord === undefined) {
     wrapCoord_ = (coord: LatLngTuple) => coord;
-  }
-  else {
+  } else {
     wrapCoord_ = wrapCoord;
   }
 
@@ -330,7 +323,9 @@ const TraceRouteMarkers: React.FC<{ host: string; dest: string; points: PathPoin
             </ul>
             <hr />
             <span className="host-label">{host}</span>
-            <span className="host-arrow" style={{ color }}>&nbsp; ➡️ &nbsp;</span>
+            <span className="host-arrow" style={{ color }}>
+              &nbsp; ➡️ &nbsp;
+            </span>
             <span className="dest-label">{dest}</span>
           </Popup>
         </Marker>
@@ -338,8 +333,8 @@ const TraceRouteMarkers: React.FC<{ host: string; dest: string; points: PathPoin
       <Polyline positions={points.map(point => wrapCoord_([point.lat, point.lon]) as LatLngTuple)} color={color}></Polyline>
     </div>
   ) : (
-      <></>
-    );
+    <></>
+  );
 };
 
 console.log(Button);
