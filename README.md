@@ -34,7 +34,7 @@ An alternative way is custom API or custom function as long as the target API ha
 ## Setup 
 1. Install & Configure Telegraf and InfluxDB properly.
 2. See [Telegraf's wiki](https://github.com/influxdata/telegraf/wiki/Traceroute) to configure MTR data collection as an input.
-3. Explore database via the `influx` CLi tool, so that to make sure data is collected as expected. See [the query section](#Preview via the CLi tool of InfluxDB).
+3. Explore database via the `influx` CLi tool, so that to make sure data is collected as expected. See [the query section](./#Preview via the CLi tool of InfluxDB).
 4. Install the Traceroute Map Panel plugin to Grafana. (How?: TODO)
 5. Create a new panel in Grafana:
 - 1. Choose visualization "Traceroute Map Panel"
