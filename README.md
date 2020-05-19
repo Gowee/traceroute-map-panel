@@ -22,9 +22,15 @@ select hop, ip, rtt, loss from (select mean(avg) as rtt, mean(loss) as loss from
 
 #### Query in Grafana
 ```sql
-select mean(avg) as rtt, mean(loss) as loss from mtr WHERE $timeFilter group by hop, ip, host, dest
+select mean(avg) as rtt, mean(loss) as loss from mtr WHERE now() - 5m < time group by hop, ip, host, dest
 ```
 & *Format as __Table__*.
+
+Or (see [Notes](#notes)):
+```sql
+select mean(avg) as rtt, mean(loss) as loss from mtr WHERE $timeFilter group by hop, ip, host, dest
+```
+.
 
 ## Geo IP
 This panel relys on external API service for Geo IP resolving. 
@@ -45,3 +51,9 @@ An alternative way is custom API or custom function as long as the target API ha
     2. In query editor, toggle the text edit mode by clicking the pen icon and enter the query. See [the query section](#query-in-grafana).
     3. At the bottom of the edtior, choose *FORMAT AS Table* instead of *Time Series*.
 6. Setup Geo IP service provider, optionally.
+
+## Notes
+The panel is not really time-series aware in the sense that it expects only static route path for one src-dest pair.
+If there is dynamic routing (e.g. multiple route paths for one src-dest pair), which is not distinguishable from the data, the paths displayed on the map may get messy. So it is generally a good idea to hardcode the `$timeFilter` to be a small range, such as `now() - 5m < time` (recent 5 mins) to circumvent the case.
+
+The Geo IP resolving is sequential, instead of concurrent, in the current implementation. So it is predicatable that the map keeps loading for a long while at the first time. The resolving result is then cached in sessionStorage.
