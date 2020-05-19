@@ -9,7 +9,7 @@
 # Traceroute Map Panel
 Traceroute Map Panel is a Grafana panel that visualize the traceroute hops in a map, just like [Besttrace](https://www.ipip.net/product/client.html).
 
-![Screenshot](./screenshot2.png)
+![Screenshot](./screenshot.png)
 
 ## Data
 Currently, Traceroute Map Panel is only expected to work with traceroute data collected from [MTR](https://github.com/traviscross/mtr/) via [Telegraf](https://github.com/influxdata/telegraf) and stored in [InfluxDB](https://github.com/influxdata/influxdb).
