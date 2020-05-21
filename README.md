@@ -45,7 +45,7 @@ An alternative way is custom API or custom function as long as the target API ha
 1. Install & Configure Telegraf and InfluxDB properly.
 2. See [Telegraf's wiki](https://github.com/influxdata/telegraf/wiki/Traceroute) to configure MTR data collection as an input.
 3. Explore database via the `influx` CLi tool, so that to make sure data is collected as expected. See [the query section](#preview-via-the-cli-tool-of-influxdb).
-4. Install the Traceroute Map Panel plugin to Grafana.
+4. Install the Traceroute Map Panel plugin to Grafana 6.7.x.
     1. Download [the latest tarball](https://github.com/Gowee/traceroute-map-panel/releases/latest).
     2. Uncompress & put the tarball content into Grafana plugin directory (usually `/var/lib/grafana/plugins`).
 5. Create a new panel in Grafana:
@@ -55,7 +55,12 @@ An alternative way is custom API or custom function as long as the target API ha
 6. Setup Geo IP service provider, optionally.
 
 ## Notes
+### Time filter
 The panel is not really time-series aware in the sense that it expects only static route path for one src-dest pair.
-If there is dynamic routing (e.g. multiple route paths for one src-dest pair), which is not distinguishable from the data, the paths displayed on the map may get messy. So it is generally a good idea to hardcode the `$timeFilter` to be a small range, such as `now() - 5m < time` (recent 5 mins) to circumvent the case.
+If there is dynamic routing (e.g. multiple route paths for one src-dest pair), the paths displayed on the map may get disrupted in unexpected ways. So it is generally a good idea to hardcode the `$timeFilter` to be a small range, such as `now() - 5m < time` (recent 5 mins) to circumvent the case.
 
-The Geo IP resolving is sequential, instead of concurrent, in the current implementation. So it is predicatable that the map keeps loading for a long while at the first time. The resolving result is then cached in sessionStorage.
+### Keeping loading for long
+In the current implementation, the Geo IP resolving is sequential, instead of concurrent. So it is predicatable that the map keeps loading for a long while at the first time. The resolving result is then cached in sessionStorage.
+
+### Error processing data
+If it errors with "Error processing data", the problem could be failures in Geo IP resolving or invalid query data (response data is empty or the data is not [*Formatted as Table*](#query-in-grafana)). The detailed error is logged in the [debugging console](https://developer.mozilla.org/en-US/docs/Web/API/Console).
