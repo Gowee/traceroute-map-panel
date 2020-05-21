@@ -17,13 +17,14 @@
     "email": "whygowe@gmail.com"
   },
   "devDependencies": {
-    "@grafana/data": "latest",
-    "@grafana/toolkit": "latest",
-    "@grafana/ui": "latest"
+    "@grafana/data": "^7.0.0",
+    "@grafana/toolkit": "^7.0.0",
+    "@grafana/ui": "^7.0.0"
   },
   "resolutions": {
     "@babel/preset-env": "7.9.0",
-    "is-promise": "2.2.2"
+    "is-promise": "2.2.2",
+    "typescript": "3.8"
   },
   "engines": {
     "node": ">=12 <13"

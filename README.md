@@ -45,7 +45,7 @@ An alternative way is custom API or custom function as long as the target API ha
 1. Install & Configure Telegraf and InfluxDB properly.
 2. See [Telegraf's wiki](https://github.com/influxdata/telegraf/wiki/Traceroute) to configure MTR data collection as an input.
 3. Explore database via the `influx` CLi tool, so that to make sure data is collected as expected. See [the query section](#preview-via-the-cli-tool-of-influxdb).
-4. Install the Traceroute Map Panel plugin to Grafana 6.7.x.
+4. Install the Traceroute Map Panel plugin to Grafana. [v0.1.0](https://github.com/Gowee/traceroute-map-panel/releases/tag/v0.1.0) is meant for Grafana 6.7.x. v0.2+ is meant for Grafana 7.0+. 
     1. Download [the latest tarball](https://github.com/Gowee/traceroute-map-panel/releases/latest).
     2. Uncompress & put the tarball content into Grafana plugin directory (usually `/var/lib/grafana/plugins`).
 5. Create a new panel in Grafana:

@@ -77,7 +77,7 @@
     display: inline-block;
 }
 
-.map-indicator > i:first-child {
+.map-indicator>i:first-child {
     margin-right: 0.5em;
 }
 
@@ -91,4 +91,13 @@
 .map-indicator.loading {
     color: black;
     background: rgba(240, 248, 255, 0.618);
+}
+
+.icon-right-space {
+    margin-right: 8px;
+}
+
+.hspace {
+    margin-left: '0.5em';
+    margin-right: '0.5em';
 }

@@ -1,10 +1,11 @@
 import React, { PureComponent, ChangeEvent } from 'react';
-import { Forms, Slider } from '@grafana/ui';
+import { Slider, Field, Button, TextArea, Select, Input, Switch } from '@grafana/ui';
 import { PanelEditorProps, SelectableValue } from '@grafana/data';
 
 import { TracerouteMapOptions } from './types';
 import { GeoIPProviderKind, GeoIPProvider, IPInfo, CustomAPI, IP2Geo, CustomFunction } from './geoip';
 import { CodeSnippets, timeout } from './utils';
+// import { Switch } from '@grafana/ui/components/Forms/Legacy/Switch/Switch';
 
 interface Props extends PanelEditorProps<TracerouteMapOptions> {}
 
@@ -28,7 +29,10 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
   }
 
   handleGeoIPProviderSelected = (option: SelectableValue<GeoIPProviderKind>) => {
-    this.setState({ geoIPProvider: this.props.options.geoIPProviders[option.value ?? 'ipsb'], test: { pending: false } });
+    this.setState({
+      geoIPProvider: this.props.options.geoIPProviders[option.value ?? 'ipsb'],
+      test: { pending: false },
+    });
   };
 
   handleGeoIPProviderChange(provider: GeoIPProvider) {
@@ -87,26 +91,36 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
         <div className="section gf-form-group">
           <h5 className="section-header">General</h5>
           <div style={{ width: 300 }}>
-            <Forms.Field label="Wrap longitude to [0°, 360°)" description="So that it won't lay within [-180°, 0°)">
-              <Forms.Switch
+            <Field label="Wrap longitude to [0°, 360°)" description="So that it won't lay within [-180°, 0°)">
+              <Switch
+                label="switch label"
                 checked={options.longitude360}
                 onChange={event => this.handleLongitude360Switched(event?.currentTarget.checked ?? false)}
               />
-            </Forms.Field>
-            <Forms.Field label="Cluster Radius" description="Merge close points within a radius into one circle">
-              <Slider min={5} max={50} value={[this.props.options.mapClusterRadius]} onChange={value => this.handleMapClusterRadius(value[0])} />
-            </Forms.Field>
-            <Forms.Field label="Note">
+            </Field>
+            <Field label="Cluster Radius" description="Merge close points within a radius into one circle">
+              <Slider
+                min={5}
+                max={50}
+                value={[this.props.options.mapClusterRadius]}
+                onChange={value => this.handleMapClusterRadius(value[0])}
+              />
+            </Field>
+            <Field label="Note">
               <span>Some options won't take effect until the panel/page is refreshed.</span>
-            </Forms.Field>
+            </Field>
           </div>
         </div>
         <div className="section gf-form-group">
           <h5 className="section-header">GeoIP</h5>
           <div style={{ width: 400 }}>
-            <Forms.Field label="Provider">
-              <Forms.Select options={geoIPOptions} value={this.state.geoIPProvider.kind} onChange={this.handleGeoIPProviderSelected} />
-            </Forms.Field>
+            <Field label="Provider">
+              <Select
+                options={geoIPOptions}
+                value={this.state.geoIPProvider.kind}
+                onChange={this.handleGeoIPProviderSelected}
+              />
+            </Field>
             {(() => {
               switch (this.state.geoIPProvider.kind) {
                 case 'ipinfo':
@@ -114,33 +128,39 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
                 case 'ipsb':
                   return <IPSBConfig />;
                 case 'custom-api':
-                  return <CustomAPIConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />;
+                  return (
+                    <CustomAPIConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />
+                  );
                 case 'custom-function':
-                  return <CustomFunctionConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />;
+                  return (
+                    <CustomFunctionConfig onChange={this.handleGeoIPProviderChange} config={this.state.geoIPProvider} />
+                  );
               }
             })()}
           </div>
-          <Forms.Field>
+          <Field>
             <>
-              <Forms.Button icon={this.state.test.pending ? 'fa fa-spinner fa-spin' : undefined} onClick={this.handleTestAndSave}>
+              <Button onClick={this.handleTestAndSave}>
+                {/* @grafana/ui IconName types prevents using of fa-spin */}
+                {this.state.test.pending ? <i className="fa fa-spinner fa-spin icon-right-space" /> : <></>}
                 Test and Save
-              </Forms.Button>
-              <span style={{ marginLeft: '0.5em', marginRight: '0.5em' }}></span>
-              <Forms.Button variant="secondary" onClick={this.handleClearGeoIPCache}>
+              </Button>
+              <span className="hspace"></span>
+              <Button variant="secondary" onClick={this.handleClearGeoIPCache}>
                 Clear Cache
-              </Forms.Button>
+              </Button>
             </>
-          </Forms.Field>
+          </Field>
 
           {this.state.test.title ? (
-            <Forms.Field label="">
+            <Field label="">
               <>
                 <span style={{ fontWeight: 'bold' }}>{this.state.test.title}</span>
                 <pre>
                   <code>{this.state.test.output}</code>
                 </pre>
               </>
-            </Forms.Field>
+            </Field>
           ) : (
             <></>
           )}
@@ -152,56 +172,64 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
 
 const geoIPOptions: Array<SelectableValue<GeoIPProviderKind>> = [
   { label: 'IPInfo.io', value: 'ipinfo', description: 'API provided by IPInfo.io.' },
-  { label: 'IP.sb (MaxMind GeoLite2)', value: 'ipsb', description: "IP.sb free API, backed by MaxMind's GeoLite2 database." },
+  {
+    label: 'IP.sb (MaxMind GeoLite2)',
+    value: 'ipsb',
+    description: "IP.sb free API, backed by MaxMind's GeoLite2 database.",
+  },
   { label: 'Custom API', value: 'custom-api', description: 'Custom API defined by a URL' },
   { label: 'Custom function', value: 'custom-function', description: 'Custom JavaScript function.' },
 ];
 
 const IPSBConfig: React.FC = () => {
   return (
-    <Forms.Field label="Note">
+    <Field label="Note">
       <span>
-        <a href="https://ip.sb/api/">IP.sb</a> provides with free IP-to-GeoLocation API without registration. Their data comes from{' '}
-        <a href="https://www.maxmind.com/">MaxMind</a>'s GeoLite2 database (<a href="https://github.com/fcambus/telize">telize</a>), which is
-        inaccurate sometimes.
+        <a href="https://ip.sb/api/">IP.sb</a> provides with free IP-to-GeoLocation API without registration. Their data
+        comes from <a href="https://www.maxmind.com/">MaxMind</a>'s GeoLite2 database (
+        <a href="https://github.com/fcambus/telize">telize</a>), which is inaccurate sometimes.
       </span>
-    </Forms.Field>
+    </Field>
   );
 };
 
 const IPInfoConfig: React.FC<{ config: IPInfo; onChange: (config: IPInfo) => void }> = ({ config, onChange }) => {
   return (
     <>
-      <Forms.Field label="Access Token" description="optional">
-        <Forms.Input
+      <Field label="Access Token" description="optional">
+        <Input
           type="text"
           value={config.token}
           placeholder="Usually in the form 0a1b2c3d4e5f6e7d"
           onChange={(event: ChangeEvent<HTMLInputElement>) => onChange({ ...config, token: event.target.value })}
         />
-      </Forms.Field>
-      <Forms.Field label="Note">
+      </Field>
+      <Field label="Note">
         <span>
-          <a href="https://IPInfo.io">IPInfo.io</a> is generally more accurate compared to MaxMind's GeoLite2 database. The API access token is
-          optional, but requests without token is rate-limited. After registration, their free plan provides with 50k lookups per month.
+          <a href="https://IPInfo.io">IPInfo.io</a> is generally more accurate compared to MaxMind's GeoLite2 database.
+          The API access token is optional, but requests without token is rate-limited. After registration, their free
+          plan provides with 50k lookups per month.
         </span>
-      </Forms.Field>
+      </Field>
     </>
   );
 };
 
-const CustomAPIConfig: React.FC<{ config: CustomAPI; onChange: (config: CustomAPI) => void }> = ({ config, onChange }) => {
+const CustomAPIConfig: React.FC<{ config: CustomAPI; onChange: (config: CustomAPI) => void }> = ({
+  config,
+  onChange,
+}) => {
   return (
     <>
-      <Forms.Field label="API URL">
-        <Forms.Input
+      <Field label="API URL">
+        <Input
           type="text"
           value={config.url}
           placeholder="e.g. https://example.org/geoip/{IP}"
           onChange={(event: ChangeEvent<HTMLInputElement>) => onChange({ ...config, url: event.target.value })}
         />
-      </Forms.Field>
-      <Forms.Field label="Note">
+      </Field>
+      <Field label="Note">
         <>
           <p>
             <code>{'{IP}'}</code> in the URL will replaced to the actual IP address.
@@ -211,30 +239,35 @@ const CustomAPIConfig: React.FC<{ config: CustomAPI; onChange: (config: CustomAP
             <pre>
               <code>{CodeSnippets.ipgeoInterface}</code>
             </pre>
-            with <code>Content-Type: application/json</code> and proper <code>Access-Control-Allow-Origin</code> HTTP header set.
+            with <code>Content-Type: application/json</code> and proper <code>Access-Control-Allow-Origin</code> HTTP
+            header set.
           </p>
           <p>
-            <strong>Example</strong>: <a href="https://github.com/Gowee/traceroute-map-panel/blob/master/ipip-cfworker.js">ipip-cfworker.js</a>
+            <strong>Example</strong>:{' '}
+            <a href="https://github.com/Gowee/traceroute-map-panel/blob/master/ipip-cfworker.js">ipip-cfworker.js</a>
           </p>
         </>
-      </Forms.Field>
+      </Field>
     </>
   );
 };
 
-const CustomFunctionConfig: React.FC<{ config: CustomFunction; onChange: (config: CustomFunction) => void }> = ({ config, onChange }) => {
+const CustomFunctionConfig: React.FC<{ config: CustomFunction; onChange: (config: CustomFunction) => void }> = ({
+  config,
+  onChange,
+}) => {
   return (
     <>
-      <Forms.Field label="Code">
-        <Forms.TextArea
+      <Field label="Code">
+        <TextArea
           value={config.code}
           rows={15}
           placeholder={CodeSnippets.ip2geoFunction}
           style={{ fontFamily: 'monospace' }}
           onChange={(event: ChangeEvent<HTMLTextAreaElement>) => onChange({ ...config, code: event.target.value })}
         />
-      </Forms.Field>
-      <Forms.Field label="Note">
+      </Field>
+      <Field label="Note">
         <p>
           The JavaScript function is expected to match the signature:
           <pre>
@@ -245,7 +278,7 @@ const CustomFunctionConfig: React.FC<{ config: CustomFunction; onChange: (config
             <code>{CodeSnippets.ipgeoInterface}</code>
           </pre>
         </p>
-      </Forms.Field>
+      </Field>
     </>
   );
 };

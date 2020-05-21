@@ -95,7 +95,9 @@ export class TracerouteMapPanel extends Component<Props, State> {
     }
   }
 
-  async processData(series: DataFrame[]): Promise<{ data: Map<string, PathPoint[]>; mapBounds: Map<string, LatLngTuple[]> }> {
+  async processData(
+    series: DataFrame[]
+  ): Promise<{ data: Map<string, PathPoint[]>; mapBounds: Map<string, LatLngTuple[]> }> {
     if (series.length !== 1 || series[0].fields.length !== 7) {
       throw new Error('No query data or not formatted as table.');
     }
@@ -232,7 +234,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
           {this.state.hostListExpanded ? (
             <>
               <span className="host-list-toggler host-list-collapse" onClick={() => this.toggleHostList()}>
-                <Icon name="compress"></Icon>
+                <i className="fa fa-compress" />
               </span>
               <ul className="host-list">
                 {Array.from(data.entries()).map(([key, points]) => {
@@ -242,7 +244,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
                     <li className="host-item" onClick={() => this.toggleHostItem(key)}>
                       <span className="host-label">{host}</span>
                       <span className="host-arrow" style={{ color: this.state.hiddenHosts.has(key) ? 'grey' : color }}>
-                        <Icon name="arrow-right"></Icon>
+                        <Icon name="arrow-right" />
                       </span>
                       <span className="dest-label">{dest}</span>
                     </li>
@@ -252,7 +254,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
             </>
           ) : (
             <span className="host-list-toggler host-list-expand" onClick={() => this.toggleHostList()}>
-              <Icon name="expand" />
+              <i className="fa fa-expand" />
             </span>
           )}
         </Control>
@@ -330,7 +332,10 @@ const TraceRouteMarkers: React.FC<{
           </Popup>
         </Marker>
       ))}
-      <Polyline positions={points.map(point => wrapCoord_([point.lat, point.lon]) as LatLngTuple)} color={color}></Polyline>
+      <Polyline
+        positions={points.map(point => wrapCoord_([point.lat, point.lon]) as LatLngTuple)}
+        color={color}
+      ></Polyline>
     </div>
   ) : (
     <></>
