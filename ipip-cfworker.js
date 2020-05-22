@@ -27,10 +27,10 @@ async function handleRequest(request) {
     }
     const r = await fetch(`https://btapi.ipip.net/host/info?ip=${ip}&host=Router&lang=EN`, { headers: {'User-Agent': "frosty-waterfall"} });
     const { as, area } = await r.json();
-    const [region1, region2, region3, _, isp, lat, lon] = area.split("\t");
+    const [region1, region2, region3, org, isp, lat, lon] = area.split("\t").map((s) => s.trim());
     const geo = {
         ip: ip,
-        label: `${as} ${isp}`.trim(),
+        label: [as, isp, org].filter(s => s.length !== 0).join(" "),
         region: [region1, region2, region3].join(" "),
         lat: lat ? parseFloat(lat) : undefined,
         lon: lat ? parseFloat(lon) : undefined,
