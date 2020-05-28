@@ -248,14 +248,14 @@ export class TracerouteMapPanel extends Component<Props, State> {
                   const color = palette();
                   return (
                     <li className="host-item" onClick={() => this.toggleHostItem(key)}>
-                      <span className="host-label" title={options.simplifyHostname ? simplyHostname(host) : host}>
-                        {host}
+                      <span className="host-label" title={host}>
+                        {options.simplifyHostname ? simplyHostname(host) : host}
                       </span>
                       <span className="host-arrow" style={{ color: this.state.hiddenHosts.has(key) ? 'grey' : color }}>
                         <Icon name="arrow-right" />
                       </span>
-                      <span className="dest-label" title={options.simplifyHostname ? simplyHostname(dest) : host}>
-                        {dest}
+                      <span className="dest-label" title={dest}>
+                        {options.simplifyHostname ? simplyHostname(dest) : dest}
                       </span>
                     </li>
                   );
