@@ -1,3 +1,4 @@
+import ipAddress from 'ip-address';
 export const PACKAGE = require('../package.json');
 
 // The following rainbow function is adapted from the one in https://stackoverflow.com/a/7419630/5488616
@@ -137,4 +138,17 @@ export function timeout(promise: Promise<any>, ms: number) {
     }, ms);
     promise.then(resolve, reject);
   });
+}
+
+export function isValidIPAddress(ip: string) {
+  const ipv4 = new ipAddress.Address4(ip);
+  const ipv6 = new ipAddress.Address6(ip);
+  return ipv4.valid || ipv6.valid;
+}
+
+export function simplyHostname(hostname: string): string {
+  if (!isValidIPAddress(hostname)) {
+    hostname = hostname.split(".")[0];
+  }
+  return hostname;
 }

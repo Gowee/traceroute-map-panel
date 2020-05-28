@@ -1,6 +1,4 @@
-import ipAddress from 'ip-address';
-
-import { PACKAGE } from './utils';
+import { PACKAGE, isValidIPAddress } from './utils';
 
 // candidante cache providers:
 // SessionStorage
@@ -130,10 +128,4 @@ export class IP2Geo {
   static clearCache(): number {
     return Cache.clear();
   }
-}
-
-function isValidIPAddress(ip: string) {
-  const ipv4 = new ipAddress.Address4(ip);
-  const ipv6 = new ipAddress.Address6(ip);
-  return ipv4.valid || ipv6.valid;
 }

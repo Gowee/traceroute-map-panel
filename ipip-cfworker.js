@@ -25,9 +25,9 @@ async function handleRequest(request) {
     if (ip.trim() === "") {
         return new Response("");
     }
-    const r = await fetch(`https://btapi.ipip.net/host/info?ip=${ip}&host=Router&lang=EN`, { headers: {'User-Agent': "frosty-waterfall"} });
+    const r = await fetch(`https://btapi.ipip.net/host/info?ip=${ip}&host=Router&lang=EN`, { headers: { 'User-Agent': "frosty-waterfall" } });
     const { as, area } = await r.json();
-    const [region1, region2, region3, org, isp, lat, lon] = area.split("\t").map((s) => s.trim());
+    const [region1, region2, region3, org, isp, lat, lon] = area.split("\t").map(s => s.trim());
     const geo = {
         ip: ip,
         label: [as, isp, org].filter(s => s.length !== 0).join(" "),
@@ -36,5 +36,5 @@ async function handleRequest(request) {
         lon: lat ? parseFloat(lon) : undefined,
         _time: (new Date()).toString()
     };
-    return new Response(JSON.stringify(geo), { status: 200, headers: { 'Content-Type': "application/json; charset=UTF-8", 'Access-Control-Allow-Origin': "*", 'Cache-Control': "max-age=86400"  } });
+    return new Response(JSON.stringify(geo), { status: 200, headers: { 'Content-Type': "application/json; charset=UTF-8", 'Access-Control-Allow-Origin': "*", 'Cache-Control': "max-age=86400" } });
 }

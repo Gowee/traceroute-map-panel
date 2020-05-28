@@ -10,6 +10,11 @@ export interface TracerouteMapOptions {
   };
   longitude360: boolean;
   mapClusterRadius: number;
+  // in em
+  hostnameLabelWidth: number;
+  // showSrcHostname: boolean;
+  // showDestHostname: boolean;
+  simplifyHostname: boolean;
 }
 
 export const defaults: TracerouteMapOptions = {
@@ -19,4 +24,8 @@ export const defaults: TracerouteMapOptions = {
   },
   longitude360: false,
   mapClusterRadius: 15,
+  hostnameLabelWidth: 8,
+  // showSrcHostname: true,
+  // showDestHostname: true,
+  simplifyHostname: false,
 };

@@ -5,7 +5,6 @@ import { PanelEditorProps, SelectableValue } from '@grafana/data';
 import { TracerouteMapOptions } from './types';
 import { GeoIPProviderKind, GeoIPProvider, IPInfo, CustomAPI, IP2Geo, CustomFunction } from './geoip';
 import { CodeSnippets, timeout } from './utils';
-// import { Switch } from '@grafana/ui/components/Forms/Legacy/Switch/Switch';
 
 interface Props extends PanelEditorProps<TracerouteMapOptions> {}
 
@@ -26,6 +25,8 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
     this.handleTestAndSave = this.handleTestAndSave.bind(this);
     this.handleClearGeoIPCache = this.handleClearGeoIPCache.bind(this);
     this.handleLongitude360Switched = this.handleLongitude360Switched.bind(this);
+    this.handleHostnameLabelWidthChange = this.handleHostnameLabelWidthChange.bind(this);
+    this.handleSimplifyHostnameChange = this.handleSimplifyHostnameChange.bind(this);
   }
 
   handleGeoIPProviderSelected = (option: SelectableValue<GeoIPProviderKind>) => {
@@ -79,8 +80,16 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
     this.props.onOptionsChange({ ...this.props.options, longitude360: value });
   }
 
-  handleMapClusterRadius(value: number) {
+  handleMapClusterRadiusChange(value: number) {
     this.props.onOptionsChange({ ...this.props.options, mapClusterRadius: value });
+  }
+
+  handleHostnameLabelWidthChange(value: number) {
+    this.props.onOptionsChange({ ...this.props.options, hostnameLabelWidth: value });
+  }
+
+  handleSimplifyHostnameChange(value: boolean) {
+    this.props.onOptionsChange({ ...this.props.options, simplifyHostname: value });
   }
 
   render() {
@@ -91,7 +100,7 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
         <div className="section gf-form-group">
           <h5 className="section-header">General</h5>
           <div style={{ width: 300 }}>
-            <Field label="Wrap longitude to [0°, 360°)" description="So that it won't lay within [-180°, 0°)">
+            <Field label="Wrap Longitude to [0°, 360°)" description="So that it won't lay within [-180°, 0°)">
               <Switch
                 label="switch label"
                 checked={options.longitude360}
@@ -103,7 +112,34 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
                 min={5}
                 max={50}
                 value={[this.props.options.mapClusterRadius]}
-                onChange={value => this.handleMapClusterRadius(value[0])}
+                onChange={value => this.handleMapClusterRadiusChange(value[0])}
+              />
+            </Field>
+            <Field
+              label="Hostname Label Width (em)"
+              description="In the bottom-left host list"
+            >
+              <Slider
+                min={2}
+                max={12}
+                value={[this.props.options.hostnameLabelWidth]}
+                onChange={value => this.handleHostnameLabelWidthChange(value[0])}
+              />
+            </Field>
+            {/* <Field label="Show src hostname" description="Show src hostname in ">
+              <Slider
+                min={2}
+                max={12}
+                value={[this.props.options.hostnameLabelWidth]}
+                onChange={value => this.handleHostnameLabelWidthChange(value[0])}
+              />
+            </Field>
+            */}
+            <Field label="Show Simplified Hostname" description="i.e. only the leftmost portion instead of FQDN">
+              <Switch
+                label="switch label"
+                checked={options.simplifyHostname}
+                onChange={event => this.handleSimplifyHostnameChange(event?.currentTarget.checked ?? false)}
               />
             </Field>
             <Field label="Note">
@@ -284,7 +320,3 @@ const CustomFunctionConfig: React.FC<{ config: CustomFunction; onChange: (config
 };
 
 // TODO: use reflection to unify types?
-
-// const Link： React.FC< { url: string } = (url: string) => {
-//   return <a href={url}></a>
-// };

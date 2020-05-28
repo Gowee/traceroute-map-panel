@@ -18,7 +18,7 @@ import {
 
 import { TracerouteMapOptions } from './types';
 import { IP2Geo, IPGeo } from './geoip';
-import { rainbowPalette, round, HiddenHostsStorage } from './utils';
+import { rainbowPalette, round, HiddenHostsStorage, simplyHostname } from './utils';
 import 'panel.css';
 
 interface Props extends PanelProps<TracerouteMapOptions> {}
@@ -157,7 +157,6 @@ export class TracerouteMapPanel extends Component<Props, State> {
     }
     return {
       data: new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())])),
-      // series,
       mapBounds,
     };
 
@@ -208,8 +207,15 @@ export class TracerouteMapPanel extends Component<Props, State> {
         zoom={1}
         style={{ position: 'relative', height, width }}
         bounds={effectiveBounds}
-        options={{ zoomSnap: 0.5, zoomDelta: 0.5 }}
+        options={{ zoomSnap: 0.33, zoomDelta: 0.33 }}
       >
+        <style type="text/css">
+        { `
+        .host-list .host-label, .host-list .dest-label {
+          width: ${options.hostnameLabelWidth}em;
+        }
+        ` }
+        </style>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -238,15 +244,15 @@ export class TracerouteMapPanel extends Component<Props, State> {
               </span>
               <ul className="host-list">
                 {Array.from(data.entries()).map(([key, points]) => {
-                  const [host, dest] = key.split('|');
+                  const [host, dest] = key.split('|').map(options.simplifyHostname ? simplyHostname : (v) => v);
                   const color = palette();
                   return (
                     <li className="host-item" onClick={() => this.toggleHostItem(key)}>
-                      <span className="host-label">{host}</span>
+                      <span className="host-label" title={host}>{host}</span>
                       <span className="host-arrow" style={{ color: this.state.hiddenHosts.has(key) ? 'grey' : color }}>
                         <Icon name="arrow-right" />
                       </span>
-                      <span className="dest-label">{dest}</span>
+                      <span className="dest-label" title={dest}>{dest}</span>
                     </li>
                   );
                 })}
@@ -277,7 +283,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
                 );
               case 'error':
                 return (
-                  <span className="map-indicator error">
+                  <span className="map-indicator error" title="The Debugging Console shows the detailed error.">
                     <i className="fa fa-warning" />
                     Error processing data
                   </span>
