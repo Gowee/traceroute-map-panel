@@ -1,9 +1,3 @@
-<!--[![CircleCI](https://circleci.com/gh/grafana/simple-react-panel.svg?style=svg)](https://circleci.com/gh/grafana/simple-react-panel)
-[![David Dependency Status](https://david-dm.org/grafana/simple-react-panel.svg)](https://david-dm.org/grafana/simple-react-panel)
-[![David Dev Dependency Status](https://david-dm.org/grafana/simple-react-panel/dev-status.svg)](https://david-dm.org/grafana/simple-react-panel/?type=dev)
-[![Known Vulnerabilities](https://snyk.io/test/github/grafana/simple-react-panel/badge.svg)](https://snyk.io/test/github/grafana/simple-react-panel)
-[![Maintainability](https://api.codeclimate.com/v1/badges/1dee2585eb412f913cbb/maintainability)](https://codeclimate.com/github/grafana/simple-react-panel/maintainability)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/1dee2585eb412f913cbb/test_coverage)](https://codeclimate.com/github/grafana/simple-react-panel/test_coverage)-->
 ![CI status badge](https://github.com/Gowee/traceroute-map-panel/workflows/CI/badge.svg)
 ![release badge](https://img.shields.io/github/v/release/Gowee/traceroute-map-panel.svg)
 # Traceroute Map Panel
@@ -46,7 +40,7 @@ An alternative way is custom API or custom function as long as the target API ha
 2. See [Telegraf's wiki](https://github.com/influxdata/telegraf/wiki/Traceroute) to configure MTR data collection as an input.
 3. Explore database via the `influx` CLi tool, so that to make sure data is collected as expected. See [the query section](#preview-via-the-cli-tool-of-influxdb).
 4. Install the Traceroute Map Panel plugin to Grafana.
-    1. Download [the latest tarball](https://github.com/Gowee/traceroute-map-panel/releases/latest). [v0.1.0](https://github.com/Gowee/traceroute-map-panel/releases/tag/v0.1.0) is meant for Grafana 6.7.x. v0.2+ (for now, [v0.2.0-beta](https://github.com/Gowee/traceroute-map-panel/releases/tag/v0.2.0-beta)) is meant for Grafana 7.0+. 
+    1. Download [the latest tarball](https://github.com/Gowee/traceroute-map-panel/releases/latest), which is meant for Grafana 7.0+. For Grafana 6.7.x, there is [v0.1.0](https://github.com/Gowee/traceroute-map-panel/releases/tag/v0.1.0).
     2. Uncompress & put the tarball content into Grafana plugin directory (usually `/var/lib/grafana/plugins`).
 5. Create a new panel in Grafana:
     1. Choose visualization "Traceroute Map Panel"
