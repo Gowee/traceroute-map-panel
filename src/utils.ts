@@ -148,7 +148,7 @@ export function isValidIPAddress(ip: string) {
 
 export function simplyHostname(hostname: string): string {
   if (!isValidIPAddress(hostname)) {
-    hostname = hostname.split(".")[0];
+    hostname = hostname.split('.')[0];
   }
   return hostname;
 }

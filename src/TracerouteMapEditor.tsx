@@ -115,10 +115,7 @@ export class TracerouteMapEditor extends PureComponent<PanelEditorProps<Tracerou
                 onChange={value => this.handleMapClusterRadiusChange(value[0])}
               />
             </Field>
-            <Field
-              label="Hostname Label Width (em)"
-              description="In the bottom-left host list"
-            >
+            <Field label="Hostname Label Width (em)" description="In the bottom-left host list">
               <Slider
                 min={2}
                 max={12}

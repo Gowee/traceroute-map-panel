@@ -207,14 +207,14 @@ export class TracerouteMapPanel extends Component<Props, State> {
         zoom={1}
         style={{ position: 'relative', height, width }}
         bounds={effectiveBounds}
-        options={{ zoomSnap: 0.33, zoomDelta: 0.33 }}
+        options={{ zoomSnap: 0.333, zoomDelta: 0.333 }}
       >
         <style type="text/css">
-        { `
+          {`
         .host-list .host-label, .host-list .dest-label {
           width: ${options.hostnameLabelWidth}em;
         }
-        ` }
+        `}
         </style>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -244,15 +244,19 @@ export class TracerouteMapPanel extends Component<Props, State> {
               </span>
               <ul className="host-list">
                 {Array.from(data.entries()).map(([key, points]) => {
-                  const [host, dest] = key.split('|').map(options.simplifyHostname ? simplyHostname : (v) => v);
+                  const [host, dest] = key.split('|'); //.map(options.simplifyHostname ? simplyHostname : v => v);
                   const color = palette();
                   return (
                     <li className="host-item" onClick={() => this.toggleHostItem(key)}>
-                      <span className="host-label" title={host}>{host}</span>
+                      <span className="host-label" title={options.simplifyHostname ? simplyHostname(host) : host}>
+                        {host}
+                      </span>
                       <span className="host-arrow" style={{ color: this.state.hiddenHosts.has(key) ? 'grey' : color }}>
                         <Icon name="arrow-right" />
                       </span>
-                      <span className="dest-label" title={dest}>{dest}</span>
+                      <span className="dest-label" title={options.simplifyHostname ? simplyHostname(dest) : host}>
+                        {dest}
+                      </span>
                     </li>
                   );
                 })}
