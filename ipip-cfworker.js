@@ -36,5 +36,5 @@ async function handleRequest(request) {
         lon: lat ? parseFloat(lon) : undefined,
         _time: (new Date()).toString()
     };
-    return new Response(JSON.stringify(geo), { status: 200, headers: { 'Content-Type': "application/json; charset=UTF-8", 'Access-Control-Allow-Origin': "*", 'Cache-Control': "max-age=86400" } });
+    return new Response(JSON.stringify(geo), { status: 200, headers: { 'Content-Type': "application/json; charset=UTF-8", 'Access-Control-Allow-Origin': "*", 'Cache-Control': "max-age=1296000" } });
 }

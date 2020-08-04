@@ -105,8 +105,8 @@ export class IP2Geo {
       throw new Error(`IPInfo: ${data.error.title} (${data.error.message})`);
     }
     const { country, city, region, loc, org } = data;
-    const region_city = city ? `${city.indexOf(region) === -1 ? `${city}, ${region}` : city}, ${country}` : undefined;
-    const [lat, lon] = loc.split(',').map(parseFloat);
+    const region_city = city && `${city.indexOf(region) === -1 ? `${city}, ${region}` : city}, ${country}`;
+    const [lat, lon] = loc ? loc.split(',').map(parseFloat) : [undefined, undefined];
     const geo = { region: region_city, label: org, lat, lon };
     return geo;
   }
