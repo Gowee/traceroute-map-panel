@@ -1,6 +1,6 @@
 {
   "name": "traceroute-map-panel",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A Grafana panel that visualize traceroute hops in a map",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
