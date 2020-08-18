@@ -33,7 +33,7 @@ This panel relys on external API service for Geo IP resolving.
 
 The panel ships with two built-in Geo IP service providers: [IP.sb](https://ip.sb) and [IPInfo.io](https://ipinfo.io). The former is free all the time while inaccurate sometimes as it is backed by MaxMind's GeoLite2 database. The latter is a little more accurate in general while rate-limited without API token.
 
-An alternative way is custom API or custom function as long as the target API has proper [CORS header](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) set. A sample [Cloudflare Worker](https://workers.cloudflare.com/) script that proxies requests to some third-party service is located in [ipip-cfworker.js](https://raw.githubusercontent.com/Gowee/traceroute-map-panel/master/ipip-cfworker.js).
+An alternative way is custom API or custom function as long as the target API has proper [CORS header](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) set. A sample [Cloudflare Worker](https://workers.cloudflare.com/) script that proxies requests to some third-party service is located in [ipip-cfworker.js](https://github.com/Gowee/traceroute-map-panel/blob/master/ipip-cfworker.js).
 
 ## Setup 
 1. Install & Configure Telegraf and InfluxDB properly.
