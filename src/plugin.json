@@ -18,14 +18,14 @@
       {"name": "License", "url": "https://github.com/Gowee/traceroute-map-panel/blob/master/LICENSE"}
     ],
     "screenshots": [
-      {"name": "Traceroute Map Panel", "path": "./screenshot.png"}
+      {"name": "Traceroute Map Panel", "path": "../screenshot.png"}
     ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },
 
   "dependencies": {
-    "grafanaDependency": "7.0.x",
+    "grafanaDependency": ">=7.0",
     "plugins": []
   }
 }
