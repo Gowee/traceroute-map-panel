@@ -1,0 +1,23 @@
+,
+    {
+      "id": "gowee-traceroute-map-panel",
+      "type": "panel",
+      "url": "https://github.com/Gowee/traceroute-map-panel",
+      "versions": [
+        {
+          "version": "0.2.0-beta",
+          "commit": "d8263bc62175298b4208730164d0bb582afc3dd8",
+          "url": "https://github.com/Gowee/traceroute-map-panel"
+        },
+        {
+          "version": "0.2.0-alpha",
+          "commit": "6104c24fb2d1d48555a0dea672a5f8973b5140ed",
+          "url": "https://github.com/Gowee/traceroute-map-panel"
+        },
+        {
+          "version": "0.1.0",
+          "commit": "11126b2ea3b390ad7d7999571146bc41e1fa8cca",
+          "url": "https://github.com/Gowee/traceroute-map-panel"
+        }        
+      ]
+    }

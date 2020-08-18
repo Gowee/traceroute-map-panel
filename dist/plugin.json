@@ -1,0 +1,29 @@
+{
+  "type": "panel",
+  "name": "Traceroute Map Panel",
+  "id": "gowee-traceroute-map-panel",
+
+  "info": {
+    "description": "A Grafana panel that visualize traceroute hops in a map",
+    "author": {
+      "name": "Gowee"
+    },
+    "keywords": ["traceroute", "map", "mtr"],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "links": [
+      {"name": "Website", "url": "https://github.com/Gowee/traceroute-map-panel"},
+      {"name": "License", "url": "https://github.com/Gowee/traceroute-map-panel/blob/master/LICENSE"}
+    ],
+    "screenshots": [],
+    "version": "0.2.3",
+    "updated": "2020-08-18"
+  },
+
+  "dependencies": {
+    "grafanaVersion": "7.0.x",
+    "plugins": []
+  }
+}
