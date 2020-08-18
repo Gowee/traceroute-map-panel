@@ -1,7 +1,7 @@
 {
   "type": "panel",
   "name": "Traceroute Map Panel",
-  "id": "gowee-traceroute-map-panel",
+  "id": "gowee-traceroutemap-panel",
 
   "info": {
     "description": "A Grafana panel that visualize traceroute hops in a map",
