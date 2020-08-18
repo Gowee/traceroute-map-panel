@@ -1,6 +1,7 @@
 import React, { PureComponent, ChangeEvent } from 'react';
 import { Slider, Field, Button, TextArea, Select, Input, Switch } from '@grafana/ui';
 import { PanelEditorProps, SelectableValue } from '@grafana/data';
+import {} from '@emotion/core'; // https://github.com/grafana/grafana/issues/26512
 
 import { TracerouteMapOptions } from './types';
 import { GeoIPProviderKind, GeoIPProvider, IPInfo, CustomAPI, IP2Geo, CustomFunction } from './geoip';
