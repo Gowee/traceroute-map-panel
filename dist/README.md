@@ -3,35 +3,49 @@
 # Traceroute Map Panel
 Traceroute Map Panel is a Grafana panel that visualize the traceroute hops in a map, just like [Besttrace](https://www.ipip.net/product/client.html).
 
-![Screenshot](https://raw.githubusercontent.com/Gowee/traceroute-map-panel/master/screenshot.png)
+![Screenshot](https://raw.githubusercontent.com/Gowee/traceroute-map-panel/master/src/img/screenshot.png)
 
 ## Data
-Currently, Traceroute Map Panel is only expected to work with traceroute data collected from [MTR](https://github.com/traviscross/mtr/) via [Telegraf](https://github.com/influxdata/telegraf) and stored in [InfluxDB](https://github.com/influxdata/influxdb).
+Traceroute Map Panel expects traceroute data in the following schema, where fields order does not matter:
+| Field | Type | Description |
+|:-:|:-:|:-:|-|-|-|-|
+| host | string | source host where the data is collected |
+| dest | string | host where the trace is destinated |
+| hop | number | nth hop |
+| ip | string | IP address of the hop |
+| rtt | number | round-trip time |
+| loss | number | packet loss |
+| time | number | timestamp, not used yet |
+
+Typically, the traceroute data is collected from [MTR](https://github.com/traviscross/mtr/) via [Telegraf](https://github.com/influxdata/telegraf) and stored in [InfluxDB](https://github.com/influxdata/influxdb). It is also possible to use other datasource as long as the data is in the expected schema. 
 
 Telegraf's wiki has [a sample config](https://github.com/influxdata/telegraf/wiki/Traceroute) utilizing the built-in [`[[inputs.exec]]`](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/exec) for this.
 
 ### Query
 #### Preview via the CLi tool of InfluxDB
+This query groups data by `host->dest` pair so that to be clear when previewing data with the CLi client of InfluxDB.
 ```sql
 select hop, ip, rtt, loss from (select mean(avg) as rtt, mean(loss) as loss from mtr WHERE now() - 6h < time AND time < now() group by hop, ip, host, dest) group by host, dest
 ```
 
 #### Query in Grafana
+This query is more straightforward and intended to be read by Grafana.
 ```sql
 select mean(avg) as rtt, mean(loss) as loss from mtr WHERE now() - 5m < time group by hop, ip, host, dest
 ```
 & *Format as __Table__*.
 
-Or (see [Notes](#notes)):
+Or (less recommended, see [Notes](#time-filter)):
 ```sql
 select mean(avg) as rtt, mean(loss) as loss from mtr WHERE $timeFilter group by hop, ip, host, dest
 ```
+& *Format as __Table__*.
 .
 
 ## Geo IP
 This panel relys on external API service for Geo IP resolving. 
 
-The panel ships with two built-in Geo IP service providers: [IP.sb](https://ip.sb) and [IPInfo.io](https://ipinfo.io). The former is free all the time while inaccurate sometimes as it is backed by MaxMind's GeoLite2 database. The latter is a little more accurate in general while rate-limited without API token.
+The panel ships with two built-in Geo IP service providers: [IP.sb](https://ip.sb) and [IPInfo.io](https://ipinfo.io). The former is activated by default and free all the time while inaccurate sometimes as it is backed by MaxMind's GeoLite2 database. The latter is a little more accurate in general while rate-limited without API token.
 
 An alternative way is custom API or custom function as long as the target API has proper [CORS header](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) set. A sample [Cloudflare Worker](https://workers.cloudflare.com/) script that proxies requests to some third-party service is located in [ipip-cfworker.js](https://github.com/Gowee/traceroute-map-panel/blob/master/ipip-cfworker.js).
 
