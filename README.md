@@ -13,8 +13,9 @@ Traceroute Map Panel expects traceroute data in the following schema, where fiel
 | dest | string | host where the trace is destinated |
 | hop | number | nth hop |
 | ip | string | IP address of the hop |
-| rtt | number | Round-Trip Time |
+| rtt | number | round-trip time |
 | loss | number | packet loss |
+| time | number | timestamp, not used yet |
 
 Typically, the traceroute data is collected from [MTR](https://github.com/traviscross/mtr/) via [Telegraf](https://github.com/influxdata/telegraf) and stored in [InfluxDB](https://github.com/influxdata/influxdb). It is also possible to use other datasource as long as the data is in the expected schema. 
 
