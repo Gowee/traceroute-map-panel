@@ -6,6 +6,20 @@ Traceroute Map Panel is a Grafana panel that visualize the traceroute hops in a 
 ![Screenshot](https://raw.githubusercontent.com/Gowee/traceroute-map-panel/master/src/img/screenshot.png)
 
 ## Data
+Traceroute Map Panel expects traceroute data in the following schema, where fields order does not matter:
+| Field | Type | ip | host | dest | rtt | loss |
+|:-:|:-:|:-:|-|-|-|-|
+| Type | number | string | string | string | number | number |
+
+| Field | Type | Description |
+|:-:|:-:|:-:|-|-|-|-|
+| host | string | source host where the data is collected |
+| dest | string | host where the trace is destinated |
+| hop | number | nth hop |
+| ip | string | IP address of the hop |
+| rtt | number | Round-Trip Time |
+| loss | number | packet loss |
+
 Typically, the traceroute data is collected from [MTR](https://github.com/traviscross/mtr/) via [Telegraf](https://github.com/influxdata/telegraf) and stored in [InfluxDB](https://github.com/influxdata/influxdb). It is also possible to use other datasource as long as the data is in the expected schema. 
 
 Telegraf's wiki has [a sample config](https://github.com/influxdata/telegraf/wiki/Traceroute) utilizing the built-in [`[[inputs.exec]]`](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/exec) for this.
