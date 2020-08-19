@@ -3,10 +3,10 @@
 # Traceroute Map Panel
 Traceroute Map Panel is a Grafana panel that visualize the traceroute hops in a map, just like [Besttrace](https://www.ipip.net/product/client.html).
 
-![Screenshot](https://raw.githubusercontent.com/Gowee/traceroute-map-panel/master/screenshot.png)
+![Screenshot](https://raw.githubusercontent.com/Gowee/traceroute-map-panel/master/src/img/screenshot.png)
 
 ## Data
-Currently, Traceroute Map Panel is only expected to work with traceroute data collected from [MTR](https://github.com/traviscross/mtr/) via [Telegraf](https://github.com/influxdata/telegraf) and stored in [InfluxDB](https://github.com/influxdata/influxdb).
+Typically, the traceroute data is collected from [MTR](https://github.com/traviscross/mtr/) via [Telegraf](https://github.com/influxdata/telegraf) and stored in [InfluxDB](https://github.com/influxdata/influxdb). It is also possible to use other datasource as long as the data is in the expected schema. 
 
 Telegraf's wiki has [a sample config](https://github.com/influxdata/telegraf/wiki/Traceroute) utilizing the built-in [`[[inputs.exec]]`](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/exec) for this.
 

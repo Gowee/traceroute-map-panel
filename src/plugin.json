@@ -18,7 +18,7 @@
       {"name": "License", "url": "https://github.com/Gowee/traceroute-map-panel/blob/master/LICENSE"}
     ],
     "screenshots": [
-      {"name": "Traceroute Map Panel", "path": "../screenshot.png"}
+      {"name": "Traceroute Map Panel", "path": "./img/screenshot.png"}
     ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
