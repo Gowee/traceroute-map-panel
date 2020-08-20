@@ -21,7 +21,7 @@
       {"name": "Traceroute Map Panel", "path": "./img/screenshot.png"}
     ],
     "version": "0.2.3",
-    "updated": "2020-08-19"
+    "updated": "2020-08-20"
   },
 
   "dependencies": {
