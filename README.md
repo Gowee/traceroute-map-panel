@@ -8,7 +8,7 @@ Traceroute Map Panel is a Grafana panel that visualize the traceroute hops in a 
 ## Data
 Traceroute Map Panel expects traceroute data in the following schema, where fields order does not matter:
 | Field | Type | Description |
-|:-:|:-:|:-:|-|-|-|-|
+|-|:-:|:-:|
 | host | string | source host where the data is collected |
 | dest | string | host where the trace is destinated |
 | hop | number | nth hop |
