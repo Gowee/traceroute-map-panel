@@ -77,5 +77,5 @@ If it errors with "Error processing data", the problem could be failures in Geo 
 
 ----
 
-This project is still too young to be stable enough. Feel free to open a new issue if you encouter problems when setting-up or have suggestions (even pointing out a typo would help a lot). 🚀
+This project is still too young to be stable enough. 🚀 Feel free to open a new issue if you encounter problems when setting-up or have suggestions (even pointing out a typo would help a lot).
 
