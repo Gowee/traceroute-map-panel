@@ -59,7 +59,7 @@ An alternative way is custom API or custom function as long as the target API ha
         2. Uncompress & put the tarball content into Grafana plugin directory (usually `/var/lib/grafana/plugins`).
     - [Install via the `grafana-cli` tool](https://grafana.com/grafana/plugins/gowee-traceroutemap-panel/installation).
 5. Create a new panel in Grafana:
-    1. Choose visualization "Traceroute Map Panel"
+    1. Choose visualization "Traceroute Map Panel" (For recent Grafana versions, "Visualization" is in the right-side settings panel, just after  the "Panel title/description" section.)
     2. In query editor, toggle the text edit mode by clicking the pen icon and enter the query. See [the query section](#query-in-grafana).
     3. At the bottom of the edtior, choose *FORMAT AS Table* instead of *Time Series*.
 6. Setup Geo IP service provider, optionally.
