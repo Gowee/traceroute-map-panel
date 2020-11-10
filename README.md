@@ -74,3 +74,8 @@ In the current implementation, the Geo IP resolving is sequential, instead of co
 
 ### Error processing data
 If it errors with "Error processing data", the problem could be failures in Geo IP resolving or invalid query data (response data is empty or the data is not [*Formatted as Table*](#query-in-grafana)). The detailed error is logged in the [debugging console](https://developer.mozilla.org/en-US/docs/Web/API/Console).
+
+----
+
+This project is still too young to be stable enough. Feel free to open a new issue if you encouter problems when setting-up or have suggestions (even pointing out a typo would help a lot). 🚀
+
