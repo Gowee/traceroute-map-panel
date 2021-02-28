@@ -18,10 +18,10 @@ import {
 
 import { TracerouteMapOptions } from './types';
 import { IP2Geo, IPGeo } from './geoip';
-import { rainbowPalette, round, HiddenHostsStorage, simplyHostname } from './utils';
+import { rainbowPalette, round, HiddenHostsStorage, simplyHostname, batch_with_throttle } from './utils';
 import 'panel.css';
 
-interface Props extends PanelProps<TracerouteMapOptions> {}
+interface Props extends PanelProps<TracerouteMapOptions> { }
 
 interface State {
   data: Map<string, PathPoint[]>;
@@ -101,44 +101,26 @@ export class TracerouteMapPanel extends Component<Props, State> {
     if (series.length !== 1 || series[0].fields.length !== 7) {
       throw new Error('No query data or not formatted as table.');
     }
-    let fields: any = {};
-    ['host', 'dest', 'hop', 'ip', 'rtt', 'loss'].forEach(item => (fields[item] = null));
-    for (const field of series[0].fields) {
-      if (fields.hasOwnProperty(field.name)) {
-        fields[field.name] = field.values.toArray();
-      } /* else {
-        console.log('Ignoring field: ' + field.name);
-      } */
-    }
-    if (Object.values(fields).includes(null)) {
-      throw new Error('Invalid query data');
-    }
-    let entries = _.zip(fields.host, fields.dest, fields.hop, fields.ip, fields.rtt, fields.loss) as Array<
-      [string, string, string, string, string, string]
-    >;
-    entries.sort((a, b) => parseInt(a[2], 10) - parseInt(b[2], 10));
+    const options = this.props.options;
+    const entries = dataFrameToEntries(series[0]);
+    const geos = await batch_with_throttle(entries.map(async (entry) => {
+      const ip = entry[3];
+      return await this.ip2geo(ip);
+    }), options.parallelizeGeoIP ? options.concurrentRequests : 0, options.parallelizeGeoIP ? options.requestsPerSecond : 0);
     let data: Map<string, Map<string, PathPoint>> = new Map();
-    for (let i = 0; i < entries.length; i++) {
-      const entry = entries[i];
-      const key = `${entry[0]}|${entry[1]}`;
-      // TODO: parallelize & throttle ip2geo request
-      const hop = parseInt(entry[2], 10),
-        ip = entry[3] as string,
-        rtt = parseFloat(entry[4]),
-        loss = parseFloat(entry[5]),
-        { region, label, lat: lat_, lon: lon_ } = await this.ip2geo(ip);
-      if (typeof lat_ !== 'number' || typeof lon_ !== 'number') {
-        // implying invalid or LAN IP
-        continue;
+    for (const [entry, geo] of _.zip(entries, geos)) {
+      const [host, dest, hop, ip, rtt, loss] = entry as [string, string, number, string, number, number];
+      const groupKey = `${host}|${dest}`;
+      const { region, label, lat, lon } = geo as IPGeo;
+      if (typeof lat !== 'number' || typeof lon !== 'number') {
+        continue; // implying invalid or LAN IP
       }
-      // TODO: shadowing variable names?
-      const lat = lat_ ?? 0,
-        lon = lon_ ?? 0;
-      let group = data.get(key);
+      let group = data.get(groupKey);
       if (group === undefined) {
         group = new Map();
-        data.set(key, group);
+        data.set(groupKey, group);
       }
+      // If two points are too close, they are treated as a single location.
       const point_id = `${round(lat, 1)},${round(lon, 1)}`;
       let point = group.get(point_id);
       if (point === undefined) {
@@ -149,7 +131,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
     }
     let mapBounds: Map<string, LatLngTuple[]> = new Map();
     for (const [key, points] of Array.from(data.entries())) {
-      const bound = latLngBounds(Array.from(points.values()).map(point => [point.lat, point.lon]));
+      const bound = latLngBounds(Array.from(points.values()).map((point) => [point.lat, point.lon]));
       mapBounds.set(key, [
         [bound.getSouth(), bound.getWest()],
         [bound.getNorth(), bound.getEast()],
@@ -171,16 +153,19 @@ export class TracerouteMapPanel extends Component<Props, State> {
     this.mapRef.current.leafletElement.fitBounds(this.getEffectiveBounds());
   }
 
+  /**
+   * Return map bounds excluding those whose hosts are hidden. 
+   */
   getEffectiveBounds(): LatLngBounds | undefined {
     const tuples = Array.from(this.state.mapBounds.entries())
       .filter(([key, _value]) => !this.state.hiddenHosts.has(key))
       .flatMap(([_key, tuples]) => tuples)
-      .map(tuple => this.wrapCoord(tuple));
+      .map((tuple) => this.wrapCoord(tuple));
     return tuples.length ? latLngBounds(tuples) : undefined;
   }
 
   toggleHostList() {
-    this.setState(prevState => {
+    this.setState((prevState) => {
       return { hostListExpanded: !prevState.hostListExpanded };
     });
   }
@@ -212,7 +197,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
         <style type="text/css">
           {`
         .host-list .host-label, .host-list .dest-label {
-          width: ${options.hostnameLabelWidth}em;
+          width: ${options.hostnameLabelWidth}em !important;
         }
         `}
         </style>
@@ -239,7 +224,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
         <Control position="bottomleft">
           {this.state.hostListExpanded ? (
             <>
-              <span className="host-list-toggler host-list-collapse" onClick={() => this.toggleHostList()}>
+              <span className="host-list-toggler host-list-collapse" title="Collapse hosts list" onClick={() => this.toggleHostList()}>
                 <i className="fa fa-compress" />
               </span>
               <ul className="host-list">
@@ -247,6 +232,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
                   const [host, dest] = key.split('|'); //.map(options.simplifyHostname ? simplyHostname : v => v);
                   const color = palette();
                   return (
+                    /* eslint-disable-next-line react/jsx-key */
                     <li className="host-item" onClick={() => this.toggleHostItem(key)}>
                       <span className="host-label" title={host}>
                         {options.simplifyHostname ? simplyHostname(host) : host}
@@ -263,10 +249,10 @@ export class TracerouteMapPanel extends Component<Props, State> {
               </ul>
             </>
           ) : (
-            <span className="host-list-toggler host-list-expand" onClick={() => this.toggleHostList()}>
-              <i className="fa fa-expand" />
-            </span>
-          )}
+              <span className="host-list-toggler host-list-expand" title="Expand hosts list" onClick={() => this.toggleHostList()}>
+                <i className="fa fa-expand" />
+              </span>
+            )}
         </Control>
         <Control position="topright">
           {(() => {
@@ -318,13 +304,14 @@ const TraceRouteMarkers: React.FC<{
 
   return visible ? (
     <div data-host={host} data-dest={dest} data-points={points.length}>
-      {points.map(point => (
+      {points.map((point) => (
         <Marker key={point.region} position={wrapCoord_([point.lat, point.lon])} className="point-marker">
           <Popup className="point-popup">
             <span className="point-label">{point.region}</span>
             <hr />
             <ul className="hop-list">
-              {point.hops.map(hop => (
+              {point.hops.map((hop) => (
+                /* eslint-disable-next-line react/jsx-key */
                 <li className="hop-item">
                   <span className="hop-nth">{hop.nth}</span>{' '}
                   <span className="hop-label" title={`${hop.ip} RTT:${hop.rtt} Loss:${hop.loss}`}>
@@ -343,13 +330,40 @@ const TraceRouteMarkers: React.FC<{
         </Marker>
       ))}
       <Polyline
-        positions={points.map(point => wrapCoord_([point.lat, point.lon]) as LatLngTuple)}
+        positions={points.map((point) => wrapCoord_([point.lat, point.lon]) as LatLngTuple)}
         color={color}
       ></Polyline>
     </div>
   ) : (
-    <></>
-  );
+      <></>
+    );
 };
 
-console.log(Button);
+
+/**
+ * Process the raw data frame to produce entries of fields `['host', 'dest', 'hop', 'ip', 'rtt', 'loss']`.
+ * 
+ * @param frame The raw data frame to be processed. It is expected to inlude the expected fields.
+ * @return Entries of fields.
+ */
+function dataFrameToEntries(frame: DataFrame): Array<
+  [string, string, number, string, number, number]
+> {
+  let fields: any = {};
+  ['host', 'dest', 'hop', 'ip', 'rtt', 'loss'].forEach((item) => (fields[item] = null));
+  for (const field of frame.fields) {
+    if (fields.hasOwnProperty(field.name)) {
+      fields[field.name] = field.values.toArray();
+    } /* else {
+      console.log('Ignoring field: ' + field.name);
+    } */
+  }
+  if (Object.values(fields).includes(null)) {
+    throw new Error('Invalid query data');
+  }
+  let entries = _.zip(fields.host, fields.dest, fields.hop.map(parseInt), fields.ip, fields.rtt.map(parseFloat), fields.loss.map(parseFloat)) as Array<
+    [string, string, number, string, number, number]
+  >;
+  entries.sort((a, b) => a[2] - b[2]);
+  return entries;
+}

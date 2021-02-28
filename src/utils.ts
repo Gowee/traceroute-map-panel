@@ -1,3 +1,4 @@
+import { Sema, RateLimit } from 'async-sema';
 import ipAddress from 'ip-address';
 export const PACKAGE = require('../package.json');
 
@@ -122,18 +123,17 @@ export class CodeSnippets {
   static ip2geoSignature = `(ip: string) => Promise<IPGeo>`;
 
   static ip2geoFunction = `async function(ip) {
-    const r = await fetch(\`https://api.ip.sb/geoip/\${ip}\`, { headers: { 'Accept': "application/json" } });
-    const data = await r.json();
+    const resp = await fetch(\`https://api.ip.sb/geoip/\${ip}\`, { headers: { 'Accept': "application/json" } });
+    const data = await resp.json();
     const { country, latitude, longitude, isp } = data;
-    const geo = { region: country, label: isp, lon: longitude, lat: latitude };
-    return geo;
+    return { region: country, label: isp, lon: longitude, lat: latitude };
 }`;
 }
 
 // https://stackoverflow.com/questions/46946380/fetch-api-request-timeout
 export function timeout(promise: Promise<any>, ms: number) {
-  return new Promise(function(resolve, reject) {
-    setTimeout(function() {
+  return new Promise(function (resolve, reject) {
+    setTimeout(function () {
       reject(new Error('timeout'));
     }, ms);
     promise.then(resolve, reject);
@@ -151,4 +151,32 @@ export function simplyHostname(hostname: string): string {
     hostname = hostname.split('.')[0];
   }
   return hostname;
+}
+
+/**
+ * Batch executing promises with throttling.
+ * 
+ * @param promises As is.
+ * @param concurrent The maximum number of promises that runs conncurrently.
+ * @param rps The maximum number of promises (requests) to run per second.
+ */
+export async function batch_with_throttle<V>(promises: Array<Promise<V>>, concurrent?: number, rps?: number): Promise<Array<V>> {
+  let sema = new Sema(concurrent ?? 0);
+  let lim = RateLimit(rps ?? 0, { uniformDistribution: true });
+  return await Promise.all(promises.map(async (promise) => {
+    if (typeof concurrent !== "undefined") {
+      await sema.acquire();
+    }
+    if (typeof rps !== "undefined") {
+      await lim();
+    }
+    try {
+      return await promise;
+    }
+    finally {
+      if (typeof concurrent !== "undefined") {
+        await sema.release();
+      }
+    }
+  }));
 }

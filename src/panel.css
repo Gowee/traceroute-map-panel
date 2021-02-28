@@ -101,3 +101,7 @@
     margin-left: 0.5em;
     margin-right: 0.5em;
 }
+
+a.decorated {
+    text-decoration: underline dotted;
+}

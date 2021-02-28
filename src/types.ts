@@ -15,17 +15,20 @@ export interface TracerouteMapOptions {
   // showSrcHostname: boolean;
   // showDestHostname: boolean;
   simplifyHostname: boolean;
+  parallelizeGeoIP: boolean;
+  concurrentRequests: number;
+  requestsPerSecond: number;
 }
 
-export const defaults: TracerouteMapOptions = {
-  geoIPProviders: {
-    active: 'ipsb',
-    ...(Object.fromEntries(['ipsb', 'ipinfo', 'custom-api', 'custom-function'].map(p => [p, { kind: p }])) as any),
-  },
-  longitude360: false,
-  mapClusterRadius: 15,
-  hostnameLabelWidth: 8,
-  // showSrcHostname: true,
-  // showDestHostname: true,
-  simplifyHostname: false,
-};
+// export const defaults: TracerouteMapOptions = {
+//   geoIPProviders: {
+//     active: 'ipsb',
+//     ...(Object.fromEntries(['ipsb', 'ipinfo', 'custom-api', 'custom-function'].map((p) => [p, { kind: p }])) as any),
+//   },
+//   longitude360: false,
+//   mapClusterRadius: 15,
+//   hostnameLabelWidth: 8,
+//   // showSrcHostname: true,
+//   // showDestHostname: true,
+//   simplifyHostname: false,
+// };
