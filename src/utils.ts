@@ -155,28 +155,33 @@ export function simplyHostname(hostname: string): string {
 
 /**
  * Batch executing promises with throttling.
- * 
+ *
  * @param promises As is.
  * @param concurrent The maximum number of promises that runs conncurrently.
  * @param rps The maximum number of promises (requests) to run per second.
  */
-export async function batch_with_throttle<V>(promises: Array<Promise<V>>, concurrent?: number, rps?: number): Promise<Array<V>> {
+export async function batch_with_throttle<V>(
+  promises: Array<Promise<V>>,
+  concurrent?: number,
+  rps?: number
+): Promise<V[]> {
   let sema = new Sema(concurrent ?? 0);
   let lim = RateLimit(rps ?? 0, { uniformDistribution: true });
-  return await Promise.all(promises.map(async (promise) => {
-    if (typeof concurrent !== "undefined") {
-      await sema.acquire();
-    }
-    if (typeof rps !== "undefined") {
-      await lim();
-    }
-    try {
-      return await promise;
-    }
-    finally {
-      if (typeof concurrent !== "undefined") {
-        await sema.release();
+  return await Promise.all(
+    promises.map(async (promise) => {
+      if (typeof concurrent !== 'undefined') {
+        await sema.acquire();
       }
-    }
-  }));
+      if (typeof rps !== 'undefined') {
+        await lim();
+      }
+      try {
+        return await promise;
+      } finally {
+        if (typeof concurrent !== 'undefined') {
+          await sema.release();
+        }
+      }
+    })
+  );
 }

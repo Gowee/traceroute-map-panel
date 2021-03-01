@@ -21,7 +21,7 @@ import { IP2Geo, IPGeo } from './geoip';
 import { rainbowPalette, round, HiddenHostsStorage, simplyHostname, batch_with_throttle } from './utils';
 import 'panel.css';
 
-interface Props extends PanelProps<TracerouteMapOptions> { }
+interface Props extends PanelProps<TracerouteMapOptions> {}
 
 interface State {
   data: Map<string, PathPoint[]>;
@@ -103,10 +103,17 @@ export class TracerouteMapPanel extends Component<Props, State> {
     }
     const options = this.props.options;
     const entries = dataFrameToEntries(series[0]);
-    const geos = await batch_with_throttle(entries.map(async (entry) => {
-      const ip = entry[3];
-      return await this.ip2geo(ip);
-    }), options.parallelizeGeoIP ? options.concurrentRequests : 0, options.parallelizeGeoIP ? options.requestsPerSecond : 0);
+
+    const parallelizer = options.parallelizeGeoIP ? batch_with_throttle : (v: Array<Promise<IPGeo>>) => Promise.all(v);
+    const geos = await parallelizer(
+      entries.map(async (entry) => {
+        const ip = entry[3];
+        return await this.ip2geo(ip);
+      }),
+      options.concurrentRequests,
+      options.requestsPerSecond
+    );
+
     let data: Map<string, Map<string, PathPoint>> = new Map();
     for (const [entry, geo] of _.zip(entries, geos)) {
       const [host, dest, hop, ip, rtt, loss] = entry as [string, string, number, string, number, number];
@@ -120,13 +127,15 @@ export class TracerouteMapPanel extends Component<Props, State> {
         group = new Map();
         data.set(groupKey, group);
       }
-      // If two points are too close, they are treated as a single location.
+      // If two points are too close, they are merged into a single point.
+      // Note: This has nothing to with mapClusterRadius.
       const point_id = `${round(lat, 1)},${round(lon, 1)}`;
       let point = group.get(point_id);
       if (point === undefined) {
         point = { lat, lon, region: region ?? 'unknown region', hops: [] };
         group.set(point_id, point);
       }
+      // Add a new hop record at this point.
       point.hops.push({ nth: hop, ip, label: label ?? 'unknown network', rtt, loss });
     }
     let mapBounds: Map<string, LatLngTuple[]> = new Map();
@@ -154,7 +163,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
   }
 
   /**
-   * Return map bounds excluding those whose hosts are hidden. 
+   * Return map bounds excluding those whose hosts are hidden.
    */
   getEffectiveBounds(): LatLngBounds | undefined {
     const tuples = Array.from(this.state.mapBounds.entries())
@@ -183,7 +192,6 @@ export class TracerouteMapPanel extends Component<Props, State> {
     const data = this.state.data;
     let palette = rainbowPalette(data.size, 0.618);
     const effectiveBounds = this.getEffectiveBounds();
-    // console.log('Map effetive bounds', effectiveBounds);
     return (
       <LMap
         key={this.state.series}
@@ -224,7 +232,11 @@ export class TracerouteMapPanel extends Component<Props, State> {
         <Control position="bottomleft">
           {this.state.hostListExpanded ? (
             <>
-              <span className="host-list-toggler host-list-collapse" title="Collapse hosts list" onClick={() => this.toggleHostList()}>
+              <span
+                className="host-list-toggler host-list-collapse"
+                title="Collapse hosts list"
+                onClick={() => this.toggleHostList()}
+              >
                 <i className="fa fa-compress" />
               </span>
               <ul className="host-list">
@@ -249,10 +261,14 @@ export class TracerouteMapPanel extends Component<Props, State> {
               </ul>
             </>
           ) : (
-              <span className="host-list-toggler host-list-expand" title="Expand hosts list" onClick={() => this.toggleHostList()}>
-                <i className="fa fa-expand" />
-              </span>
-            )}
+            <span
+              className="host-list-toggler host-list-expand"
+              title="Expand hosts list"
+              onClick={() => this.toggleHostList()}
+            >
+              <i className="fa fa-expand" />
+            </span>
+          )}
         </Control>
         <Control position="topright">
           {(() => {
@@ -335,20 +351,17 @@ const TraceRouteMarkers: React.FC<{
       ></Polyline>
     </div>
   ) : (
-      <></>
-    );
+    <></>
+  );
 };
-
 
 /**
  * Process the raw data frame to produce entries of fields `['host', 'dest', 'hop', 'ip', 'rtt', 'loss']`.
- * 
+ *
  * @param frame The raw data frame to be processed. It is expected to inlude the expected fields.
  * @return Entries of fields.
  */
-function dataFrameToEntries(frame: DataFrame): Array<
-  [string, string, number, string, number, number]
-> {
+function dataFrameToEntries(frame: DataFrame): Array<[string, string, number, string, number, number]> {
   let fields: any = {};
   ['host', 'dest', 'hop', 'ip', 'rtt', 'loss'].forEach((item) => (fields[item] = null));
   for (const field of frame.fields) {
@@ -361,9 +374,14 @@ function dataFrameToEntries(frame: DataFrame): Array<
   if (Object.values(fields).includes(null)) {
     throw new Error('Invalid query data');
   }
-  let entries = _.zip(fields.host, fields.dest, fields.hop.map(parseInt), fields.ip, fields.rtt.map(parseFloat), fields.loss.map(parseFloat)) as Array<
-    [string, string, number, string, number, number]
-  >;
+  let entries = _.zip(
+    fields.host,
+    fields.dest,
+    fields.hop.map(parseInt),
+    fields.ip,
+    fields.rtt.map(parseFloat),
+    fields.loss.map(parseFloat)
+  ) as Array<[string, string, number, string, number, number]>;
   entries.sort((a, b) => a[2] - b[2]);
   return entries;
 }
