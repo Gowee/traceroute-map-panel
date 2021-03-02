@@ -1,6 +1,6 @@
 import React, { Component, createRef, MouseEvent } from 'react';
 import { PanelProps, LoadingState, DataFrame } from '@grafana/data';
-import { Icon, Button } from '@grafana/ui';
+import { Icon, Button, Tooltip, Spinner } from '@grafana/ui';
 // import { keys } from 'ts-transformer-keys';
 import _ from 'lodash';
 import {
@@ -16,9 +16,16 @@ import {
   LatLngBounds,
 } from './react-leaflet-compat';
 
-import { TracerouteMapOptions } from './types';
+import { TracerouteMapOptions, HopLabel } from './options';
 import { IP2Geo, IPGeo } from './geoip';
-import { rainbowPalette, round, HiddenHostsStorage, simplyHostname, batch_with_throttle } from './utils';
+import {
+  rainbowPalette,
+  round,
+  HiddenHostsStorage,
+  simplyHostname,
+  batch_with_throttle,
+  resolveHostname,
+} from './utils';
 import 'panel.css';
 
 interface Props extends PanelProps<TracerouteMapOptions> {}
@@ -45,6 +52,8 @@ interface PathPoint {
   }>;
 }
 
+type DataEntry = [string, string, number, string, number, number];
+
 export class TracerouteMapPanel extends Component<Props, State> {
   mapRef = createRef<any>();
   hiddenHostsStorage: HiddenHostsStorage;
@@ -60,6 +69,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
       mapBounds: new Map(),
       hiddenHosts: this.hiddenHostsStorage.load(),
       hostListExpanded: true,
+      indicator: 'loading',
     };
     this.updateData();
     this.handleFit = this.handleFit.bind(this);
@@ -78,7 +88,10 @@ export class TracerouteMapPanel extends Component<Props, State> {
       // https://github.com/PaulLeCam/react-leaflet/issues/340#issuecomment-527939630
       this.mapRef.current.leafletElement.invalidateSize();
     }
-    if (this.props.data.series !== this.state.series && this.props.data.state === LoadingState.Done) {
+    if (
+      (this.props.data.series !== this.state.series && this.props.data.state === LoadingState.Done) ||
+      this.props.options.srcHostAsZerothHop !== prevProps.options.srcHostAsZerothHop
+    ) {
       this.updateData();
     }
   }
@@ -91,7 +104,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
       this.setState({ indicator: undefined, data, mapBounds });
     } catch (e) {
       this.setState({ indicator: 'error' });
-      console.log(e);
+      console.error(e);
     }
   }
 
@@ -99,59 +112,41 @@ export class TracerouteMapPanel extends Component<Props, State> {
     series: DataFrame[]
   ): Promise<{ data: Map<string, PathPoint[]>; mapBounds: Map<string, LatLngTuple[]> }> {
     if (series.length !== 1 || series[0].fields.length !== 7) {
-      throw new Error('No query data or not formatted as table.');
+      throw new Error('Data is empty or not formatted as table');
     }
     const options = this.props.options;
-    const entries = dataFrameToEntries(series[0]);
+    const ip2geo = IP2Geo.fromProvider(options.geoIPProviders[options.geoIPProviders.active]);
+    const parallelizer: <T extends unknown>(v: Array<() => Promise<T>>) => Promise<T[]> = options.parallelizeGeoIP
+      ? (v) => batch_with_throttle(v, options.concurrentRequests, options.requestsPerSecond)
+      : (v) => batch_with_throttle(v, 1, 0xff);
 
-    const parallelizer = options.parallelizeGeoIP ? batch_with_throttle : (v: Array<Promise<IPGeo>>) => Promise.all(v);
+    let entries = dataFrameToEntries(series[0]);
+
+    if (options.srcHostAsZerothHop) {
+      let zerothHopEntries: DataEntry[] = [];
+      await parallelizer(
+        Array.from(new Set(entries.map((entry) => `${entry[0]}|${entry[1]}`)).values()).map((hostDest) => async () => {
+          const [host, dest] = hostDest.split('|');
+          const address = await resolveHostname(host);
+          if (address) {
+            zerothHopEntries.push([host, dest, 0, address, 0, 0]);
+          }
+        })
+      );
+      entries = zerothHopEntries.concat(entries);
+    }
+
     const geos = await parallelizer(
-      entries.map(async (entry) => {
+      entries.map((entry) => async () => {
         const ip = entry[3];
-        return await this.ip2geo(ip);
-      }),
-      options.concurrentRequests,
-      options.requestsPerSecond
+        return await ip2geo(ip);
+      })
     );
 
-    let data: Map<string, Map<string, PathPoint>> = new Map();
-    for (const [entry, geo] of _.zip(entries, geos)) {
-      const [host, dest, hop, ip, rtt, loss] = entry as [string, string, number, string, number, number];
-      const groupKey = `${host}|${dest}`;
-      const { region, label, lat, lon } = geo as IPGeo;
-      if (typeof lat !== 'number' || typeof lon !== 'number') {
-        continue; // implying invalid or LAN IP
-      }
-      let group = data.get(groupKey);
-      if (group === undefined) {
-        group = new Map();
-        data.set(groupKey, group);
-      }
-      // If two points are too close, they are merged into a single point.
-      // Note: This has nothing to with mapClusterRadius.
-      const point_id = `${round(lat, 1)},${round(lon, 1)}`;
-      let point = group.get(point_id);
-      if (point === undefined) {
-        point = { lat, lon, region: region ?? 'unknown region', hops: [] };
-        group.set(point_id, point);
-      }
-      // Add a new hop record at this point.
-      point.hops.push({ nth: hop, ip, label: label ?? 'unknown network', rtt, loss });
-    }
-    let mapBounds: Map<string, LatLngTuple[]> = new Map();
-    for (const [key, points] of Array.from(data.entries())) {
-      const bound = latLngBounds(Array.from(points.values()).map((point) => [point.lat, point.lon]));
-      mapBounds.set(key, [
-        [bound.getSouth(), bound.getWest()],
-        [bound.getNorth(), bound.getEast()],
-      ]);
-    }
-    return {
-      data: new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())])),
-      mapBounds,
-    };
+    const routes = await entriesToRoutes(_.zip(entries, geos) as Array<[DataEntry, IPGeo]>);
 
-    // TODO: use catersian product to handle non-linear route paths
+    console.log(routes);
+    return routes;
   }
 
   toggleHostItem(item: string) {
@@ -217,14 +212,15 @@ export class TracerouteMapPanel extends Component<Props, State> {
           {Array.from(data.entries()).map(([key, points]) => {
             const [host, dest] = key.split('|');
             return (
-              <TraceRouteMarkers
+              <RouteMarkers
                 key={key}
                 dest={dest}
                 host={host}
                 points={points}
                 color={palette()}
+                hopLabel={options.hopLabel}
                 visible={!this.state.hiddenHosts.has(key)}
-                wrapCoord={this.wrapCoord}
+                coordWrapper={this.wrapCoord}
               />
             );
           })}
@@ -244,8 +240,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
                   const [host, dest] = key.split('|'); //.map(options.simplifyHostname ? simplyHostname : v => v);
                   const color = palette();
                   return (
-                    /* eslint-disable-next-line react/jsx-key */
-                    <li className="host-item" onClick={() => this.toggleHostItem(key)}>
+                    <li key={`${host}|${dest}`} className="host-item" onClick={() => this.toggleHostItem(key)}>
                       <span className="host-label" title={host}>
                         {options.simplifyHostname ? simplyHostname(host) : host}
                       </span>
@@ -275,7 +270,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
             switch (this.state.indicator) {
               case undefined:
                 return (
-                  <Button variant="primary" size="md" onClick={this.handleFit}>
+                  <Button variant="primary" size="md" onClick={this.handleFit} title="Fit the map view to all points">
                     {/* FIX: @grafana/ui Button keeps active state */}
                     Fit
                   </Button>
@@ -283,16 +278,19 @@ export class TracerouteMapPanel extends Component<Props, State> {
               case 'loading':
                 return (
                   <span className="map-indicator loading">
+                    {/* <Spinner /> */}
                     <i className="fa fa-spinner fa-spin" />
                     Loading
                   </span>
                 );
               case 'error':
                 return (
-                  <span className="map-indicator error" title="The Debugging Console shows the detailed error.">
-                    <i className="fa fa-warning" />
-                    Error processing data
-                  </span>
+                  <Tooltip content="The Debugging Console shows the detailed error." theme="error">
+                    <span className="map-indicator error" title="">
+                      <i className="fa fa-warning" />
+                      Error processing data
+                    </span>
+                  </Tooltip>
                 );
             }
           })()}
@@ -302,51 +300,63 @@ export class TracerouteMapPanel extends Component<Props, State> {
   }
 }
 
-// Traceroute for one host->dest pair
-const TraceRouteMarkers: React.FC<{
+/**
+ * Leaflet Markers and Polyline for a single route, corresponding to one host->dest pair
+ */
+const RouteMarkers: React.FC<{
   host: string;
   dest: string;
   points: PathPoint[];
   color: string;
+  hopLabel: HopLabel;
   visible: boolean;
-  wrapCoord?: (coord: LatLngTuple) => LatLngTuple;
-}> = ({ host, dest, points, color, visible, wrapCoord }) => {
-  let wrapCoord_: (coord: LatLngTuple) => LatLngTuple;
-  if (wrapCoord === undefined) {
-    wrapCoord_ = (coord: LatLngTuple) => coord;
-  } else {
-    wrapCoord_ = wrapCoord;
-  }
+  coordWrapper?: (coord: LatLngTuple) => LatLngTuple;
+}> = ({ host, dest, points, color, hopLabel, visible, coordWrapper }) => {
+  let wrapCoord = coordWrapper ?? ((coord: LatLngTuple) => coord);
 
   return visible ? (
     <div data-host={host} data-dest={dest} data-points={points.length}>
       {points.map((point) => (
-        <Marker key={point.region} position={wrapCoord_([point.lat, point.lon])} className="point-marker">
+        <Marker
+          key={`${round(point.lat, 1)},${round(point.lon, 1)}`}
+          position={wrapCoord([point.lat, point.lon])}
+          className="point-marker"
+        >
           <Popup className="point-popup">
-            <span className="point-label">{point.region}</span>
+            <div className="region-label">{point.region}</div>
             <hr />
             <ul className="hop-list">
               {point.hops.map((hop) => (
-                /* eslint-disable-next-line react/jsx-key */
-                <li className="hop-item">
-                  <span className="hop-nth">{hop.nth}</span>{' '}
-                  <span className="hop-label" title={`${hop.ip} RTT:${hop.rtt} Loss:${hop.loss}`}>
-                    {hop.label}
+                <li className="hop-item" key={hop.nth} title={`${hop.ip} RTT:${hop.rtt} Loss:${hop.loss}`}>
+                  <span className="hop-nth">{hop.nth}.</span>{' '}
+                  <span className="hop-label">
+                    {(() => {
+                      switch (hopLabel) {
+                        case 'label':
+                          return hop.label;
+                        case 'ip':
+                          return hop.ip;
+                        case 'ipAndLabel':
+                          return `${hop.ip} (${hop.label})`;
+                      }
+                    })()}
                   </span>
                 </li>
               ))}
             </ul>
             <hr />
-            <span className="host-label">{host}</span>
-            <span className="host-arrow" style={{ color }}>
-              &nbsp; ➡️ &nbsp;
-            </span>
-            <span className="dest-label">{dest}</span>
+            <div className="host-dest-label">
+              <span className="host-label">{host}</span>
+              <span className="host-arrow" style={{ color }}>
+                &nbsp; ➜ &nbsp;
+              </span>
+              <span className="dest-label">{dest}</span>
+            </div>
           </Popup>
         </Marker>
       ))}
       <Polyline
-        positions={points.map((point) => wrapCoord_([point.lat, point.lon]) as LatLngTuple)}
+        positions={points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple)}
         color={color}
       ></Polyline>
     </div>
@@ -361,7 +371,8 @@ const TraceRouteMarkers: React.FC<{
  * @param frame The raw data frame to be processed. It is expected to inlude the expected fields.
  * @return Entries of fields.
  */
-function dataFrameToEntries(frame: DataFrame): Array<[string, string, number, string, number, number]> {
+function dataFrameToEntries(frame: DataFrame): DataEntry[] {
+  // TODO: how to make this function generic?
   let fields: any = {};
   ['host', 'dest', 'hop', 'ip', 'rtt', 'loss'].forEach((item) => (fields[item] = null));
   for (const field of frame.fields) {
@@ -372,16 +383,66 @@ function dataFrameToEntries(frame: DataFrame): Array<[string, string, number, st
     } */
   }
   if (Object.values(fields).includes(null)) {
-    throw new Error('Invalid query data');
+    throw new Error('Invalid data schema');
   }
+  // Note: map(parseInt) does work as intended.
+  //  ref: https://medium.com/dailyjs/parseint-mystery-7c4368ef7b21
   let entries = _.zip(
     fields.host,
     fields.dest,
-    fields.hop.map(parseInt),
+    fields.hop.map((v: string) => parseInt(v, 10)),
     fields.ip,
-    fields.rtt.map(parseFloat),
-    fields.loss.map(parseFloat)
-  ) as Array<[string, string, number, string, number, number]>;
+    fields.rtt.map((v: string) => parseFloat(v)),
+    fields.loss.map((v: string) => parseFloat(v))
+  ) as DataEntry[];
   entries.sort((a, b) => a[2] - b[2]);
   return entries;
+}
+
+/**
+ * Process [host, dest, hop, ip, rtt, loss] entries to produce routes.
+ * @param entries Entries.
+ * @param options Panel options.
+ */
+async function entriesToRoutes(
+  entries_with_geos: Array<[DataEntry, IPGeo]>
+): Promise<{ data: Map<string, PathPoint[]>; mapBounds: Map<string, LatLngTuple[]> }> {
+  // TODO: use catersian product to handle non-linear route paths
+
+  let data: Map<string, Map<string, PathPoint>> = new Map();
+  for (const [entry, geo] of entries_with_geos) {
+    const [host, dest, hop, ip, rtt, loss] = entry as DataEntry;
+    const groupKey = `${host}|${dest}`;
+    const { region, label, lat, lon } = geo as IPGeo;
+    if (typeof lat !== 'number' || typeof lon !== 'number') {
+      continue; // implying invalid or LAN IP
+    }
+    let group = data.get(groupKey);
+    if (group === undefined) {
+      group = new Map();
+      data.set(groupKey, group);
+    }
+    // If two points are too close, they are merged into a single point.
+    // Note: This has nothing to with mapClusterRadius.
+    const point_id = `${round(lat, 1)},${round(lon, 1)}`;
+    let point = group.get(point_id);
+    if (point === undefined) {
+      point = { lat, lon, region: region ?? 'unknown region', hops: [] };
+      group.set(point_id, point);
+    }
+    // Add a new hop record at this point.
+    point.hops.push({ nth: hop, ip, label: label ?? 'unknown network', rtt, loss });
+  }
+  let mapBounds: Map<string, LatLngTuple[]> = new Map();
+  for (const [key, points] of Array.from(data.entries())) {
+    const bound = latLngBounds(Array.from(points.values()).map((point) => [point.lat, point.lon]));
+    mapBounds.set(key, [
+      [bound.getSouth(), bound.getWest()],
+      [bound.getNorth(), bound.getEast()],
+    ]);
+  }
+  return {
+    data: new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())])),
+    mapBounds,
+  };
 }

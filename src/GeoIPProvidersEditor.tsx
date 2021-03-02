@@ -1,33 +1,46 @@
 import React, { PureComponent, ChangeEvent } from 'react';
-import { Field, Button, TextArea, Select, Input } from '@grafana/ui';
+import { Field, Button, TextArea, Select, Input, HorizontalGroup, VerticalGroup, Alert, CodeEditor } from '@grafana/ui';
 import { StandardEditorProps, SelectableValue } from '@grafana/data';
 import {} from '@emotion/core'; // https://github.com/grafana/grafana/issues/26512
 
-import { TracerouteMapOptions } from './types';
-import { GeoIPProviderKind, GeoIPProvider, IPInfo, IPSB, CustomAPI, IP2Geo, CustomFunction } from './geoip';
+import { TracerouteMapOptions } from './options';
+import {
+  GeoIPProviderKind,
+  GeoIPProvider,
+  IPInfo,
+  IPSB,
+  CustomAPI,
+  IP2Geo,
+  CustomFunction,
+  IPAPICo,
+  GeoIPProviderKinds,
+} from './geoip';
 import { CodeSnippets, timeout } from './utils';
 
 const TEST_IP = '1.2.4.8';
 
-interface GeoIPProvidersOption {
+export interface GeoIPProvidersOption {
   active: GeoIPProviderKind;
   ipsb: IPSB;
   ipinfo: IPInfo;
+  ipapico: IPAPICo;
   'custom-api': CustomAPI;
   'custom-function': CustomFunction;
 }
 
 interface Props extends StandardEditorProps<GeoIPProvidersOption, {}, TracerouteMapOptions> {}
 
+type Test = { status?: 'pending' | 'ok' | 'failed'; /*pending: boolean; title?: string;*/ output?: string };
+
 interface State {
   currentProvider: GeoIPProvider;
-  test: { pending: boolean; title?: string; output?: string };
+  test: Test;
 }
 
 export class GeoIPProvidersEditor extends PureComponent<Props, State> {
   static defaultValue: GeoIPProvidersOption = {
     active: 'ipsb',
-    ...(Object.fromEntries(['ipsb', 'ipinfo', 'custom-api', 'custom-function'].map((p) => [p, { kind: p }])) as any),
+    ...(Object.fromEntries(GeoIPProviderKinds.map((p) => [p, { kind: p }])) as any),
   };
 
   constructor(props: Props) {
@@ -36,17 +49,18 @@ export class GeoIPProvidersEditor extends PureComponent<Props, State> {
 
     this.state = {
       currentProvider: value[value.active],
-      test: { pending: false },
+      test: {},
     };
     this.handleGeoIPProviderChange = this.handleGeoIPProviderChange.bind(this);
     this.handleTestAndSave = this.handleTestAndSave.bind(this);
     this.handleClearGeoIPCache = this.handleClearGeoIPCache.bind(this);
+    this.handleConfirmTestResult = this.handleConfirmTestResult.bind(this);
   }
 
   handleGeoIPProviderSelected = (option: SelectableValue<GeoIPProviderKind>) => {
     this.setState({
       currentProvider: this.props.value[option.value ?? 'ipsb'],
-      test: { pending: false },
+      test: {},
     });
   };
 
@@ -56,21 +70,22 @@ export class GeoIPProvidersEditor extends PureComponent<Props, State> {
 
   async handleTestAndSave() {
     const provider = this.state.currentProvider;
-    this.setState({ test: { pending: true, title: 'Testing...', output: '' } });
+    this.setState({ test: { status: 'pending' } });
     let geo;
     let error;
     try {
       const ip2geo = IP2Geo.fromProvider(provider);
       geo = await timeout(ip2geo(TEST_IP, true), 8000);
     } catch (e) {
+      console.error(e);
       error = e;
     }
     this.setState({
       test: {
-        pending: false,
-        title: error ? '❌ Failed' : '✅ Done',
+        status: error ? 'failed' : 'ok',
         output: error
-          ? error.stack.toString() || error.toString()
+          ? (error.toString() || error.stack.toString()) +
+            '\n\n// For network error, the cause might be improper CORS header or ad blocker.'
           : `// Query result for ${TEST_IP}:\n` + JSON.stringify(geo, null, 4),
       },
     });
@@ -87,7 +102,9 @@ export class GeoIPProvidersEditor extends PureComponent<Props, State> {
   handleClearGeoIPCache() {
     if (
       confirm(
-        "Clear all the GeoIP cache now?\n\nNote: This won't trigger refreshing the panel.\nBy default, cache are stored in sesseionStorage which is cleaned up when the browser session ends."
+        `Clear all the GeoIP cache now?
+Note: This won't trigger refreshing the panel.
+By default, cache are stored in sesseionStorage which is cleaned up when the browser session ends.`
       )
     ) {
       const count = IP2Geo.clearCache();
@@ -95,12 +112,18 @@ export class GeoIPProvidersEditor extends PureComponent<Props, State> {
     }
   }
 
+  handleConfirmTestResult() {
+    // Clear test result
+    this.setState({ test: {} });
+  }
+
   render() {
+    console.log(this.state);
     return (
       <>
         <Field /*label="Provider"*/>
           <Select
-            options={geoIPOptions}
+            options={geoIPSelectOptions}
             value={this.state.currentProvider.kind}
             onChange={this.handleGeoIPProviderSelected}
           />
@@ -111,6 +134,8 @@ export class GeoIPProvidersEditor extends PureComponent<Props, State> {
               return <IPInfoConfig onChange={this.handleGeoIPProviderChange} config={this.state.currentProvider} />;
             case 'ipsb':
               return <IPSBConfig />;
+            case 'ipapico':
+              return <IPAPICoConfig />;
             case 'custom-api':
               return <CustomAPIConfig onChange={this.handleGeoIPProviderChange} config={this.state.currentProvider} />;
             case 'custom-function':
@@ -120,42 +145,35 @@ export class GeoIPProvidersEditor extends PureComponent<Props, State> {
           }
         })()}
         <Field>
-          <>
-            <Button onClick={this.handleTestAndSave}>
+          <HorizontalGroup align="center">
+            <Button onClick={this.handleTestAndSave} disabled={this.state.test.status === 'pending'}>
               {/* @grafana/ui IconName types prevents using of fa-spin */}
-              {this.state.test.pending ? <i className="fa fa-spinner fa-spin icon-right-space" /> : <></>}
-              Test & Save
+              {this.state.test.status === 'pending' ? <i className="fa fa-spinner fa-spin icon-right-space" /> : <></>}
+              Test & Apply
             </Button>
-            <span className="hspace"></span>
             <Button variant="secondary" onClick={this.handleClearGeoIPCache}>
               Clear Cache
             </Button>
-          </>
+          </HorizontalGroup>
         </Field>
-
-        {this.state.test.title ? (
-          <Field label="">
-            <>
-              <span style={{ fontWeight: 'bold' }}>{this.state.test.title}</span>
-              <pre>
-                <code>{this.state.test.output}</code>
-              </pre>
-            </>
-          </Field>
-        ) : (
-          <></>
-        )}
+        <TestResult value={this.state.test} onClose={this.handleConfirmTestResult} />
+        <hr /> {/*To seprate the provider editor with other options in its Category */}
       </>
     );
   }
 }
 
-const geoIPOptions: Array<SelectableValue<GeoIPProviderKind>> = [
+const geoIPSelectOptions: Array<SelectableValue<GeoIPProviderKind>> = [
   { label: 'IPInfo.io', value: 'ipinfo', description: 'API of IPInfo.io with some free quota' },
   {
     label: 'IP.sb (MaxMind GeoLite2)',
     value: 'ipsb',
     description: "Free API of IP.sb, backed by MaxMind's GeoLite2 database",
+  },
+  {
+    label: 'IPAPI.co',
+    value: 'ipapico',
+    description: 'API of IPAPI.co with 1k lookups/d free quota',
   },
   { label: 'Custom API', value: 'custom-api', description: 'Custom API defined by a URL' },
   { label: 'Custom Function', value: 'custom-function', description: 'Custom JavaScript function' },
@@ -164,20 +182,47 @@ const geoIPOptions: Array<SelectableValue<GeoIPProviderKind>> = [
 const IPSBConfig: React.FC = () => {
   return (
     <Field label="Note">
-      <span>
-        <a className="decorated" href="https://ip.sb/api/">
-          IP.sb
-        </a>{' '}
-        provides with free IP-to-GeoLocation API, requiring no registration. Their data comes from{' '}
-        <a className="decorated" href="https://www.maxmind.com/">
-          MaxMind
-        </a>
-        &apos;s GeoLite2 database (
-        <a className="decorated" href="https://github.com/fcambus/telize">
-          telize
-        </a>
-        ), of which the accuracy is limited.
-      </span>
+      <>
+        <p>
+          <a className="decorated" href="https://ip.sb/api/">
+            IP.sb
+          </a>{' '}
+          provides with free IP-to-GeoLocation API unlimitedly, requiring no sign-up.
+        </p>
+        <p>
+          Their data comes from{' '}
+          <a className="decorated" href="https://www.maxmind.com/">
+            MaxMind
+          </a>
+          &apos;s GeoLite2 database (
+          <a className="decorated" href="https://github.com/fcambus/telize">
+            telize
+          </a>
+          ), of which the accuracy is fairly low.
+        </p>
+      </>
+    </Field>
+  );
+};
+
+const IPAPICoConfig: React.FC = () => {
+  return (
+    <Field label="Note">
+      <>
+        <p>
+          <a className="decorated" href="https://ipapi.co">
+            IPAPI.co
+          </a>{' '}
+          provides IP-to-GeoLocation API with 1k lookups {' '}
+          <a className="decorated" href="https://ipapi.co/pricing/">
+            free quota
+          </a> per day, requiring no sign-up.
+        </p>
+        <p>
+          This API has stricter limitation on burst requests. In case rate-limit is triggered, try to disable parallelization
+          or fasten the rate-limiting options (e.g. <code>3</code> and <code>2</code>, respectively).
+        </p>
+      </>
     </Field>
   );
 };
@@ -194,17 +239,23 @@ const IPInfoConfig: React.FC<{ config: IPInfo; onChange: (config: IPInfo) => voi
         />
       </Field>
       <Field label="Note">
-        <span>
-          <a className="decorated" href="https://IPInfo.io">
-            IPInfo.io
-          </a>{' '}
-          is generally more accurate compared to MaxMind&apos;s GeoLite2 database. The{' '}
-          <a className="decorated" href="https://ipinfo.io/account/token">
-            API access token
-          </a>{' '}
-          is optional, but requests without token are rate-limited. After registration, their free plan provides with
-          50k lookups quota per month.
-        </span>
+        <>
+          <p>
+            <a className="decorated" href="https://IPInfo.io">
+              IPInfo.io
+            </a>{' '}
+            is generally more accurate compared to MaxMind&apos;s GeoLite2 database.
+          </p>
+          <p>
+            {' '}
+            The{' '}
+            <a className="decorated" href="https://ipinfo.io/account/token">
+              API access token
+            </a>{' '}
+            is optional, but requests without token are rate-limited on a daily basis. After signing up, their free plan
+            provides with 50k lookups quota per month.
+          </p>
+        </>
       </Field>
     </>
   );
@@ -265,20 +316,55 @@ const CustomFunctionConfig: React.FC<{ config: CustomFunction; onChange: (config
         />
       </Field>
       <Field label="Note">
-        <p>
-          The JavaScript function is expected to match the following signature:
-          <pre>
-            <code>{CodeSnippets.ip2geoSignature}</code>
-          </pre>
-          where <code>IPGeo</code> is:
-          <pre>
-            <code>{CodeSnippets.ipgeoInterface}</code>
-          </pre>
-          . As the function is executed in the browser runtime, external HTTP resources requested by the function should
-          have proper <code>Access-Control-Allow-Origin</code> HTTP header set.
-        </p>
+        <>
+          <p>
+            The JavaScript function is expected to match the following signature:
+            <pre>
+              <code>{CodeSnippets.ip2geoSignature}</code>
+            </pre>
+            where <code>IPGeo</code> is:
+            <pre>
+              <code>{CodeSnippets.ipgeoInterface}</code>
+            </pre>
+            .
+          </p>
+          <p>
+            {' '}
+            As the function is executed in the browser runtime, external HTTP resources requested by the function should
+            have proper <code>Access-Control-Allow-Origin</code> HTTP header set.
+          </p>
+        </>
       </Field>
     </>
+  );
+};
+
+const TestResult: React.FC<{ value: Test; onClose: () => void }> = ({ value, onClose }) => {
+  let alert;
+  switch (value.status) {
+    case 'pending':
+      alert = <Alert title="Test is pending..." severity="info" />;
+      break;
+    case 'ok':
+      alert = <Alert title="Test succeeded" severity="success" onRemove={onClose} />;
+      break;
+    case 'failed':
+      alert = <Alert title="Test failed" severity="error" onRemove={onClose} />;
+      break;
+    case undefined:
+      return <></>;
+  }
+  return (
+    <Field>
+      <>
+        {alert}
+        {value.output && (
+          <pre>
+            <code>{value.output}</code>
+          </pre>
+        )}
+      </>
+    </Field>
   );
 };
 

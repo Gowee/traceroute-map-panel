@@ -105,3 +105,15 @@
 a.decorated {
     text-decoration: underline dotted;
 }
+
+.point-popup .region-label, .point-popup .host-dest-label {
+    text-align: center;
+}
+
+.point-popup hr {
+    margin: 0.55em auto;
+}
+
+.point-popup .hop-nth {
+    font-style: italic;
+}
