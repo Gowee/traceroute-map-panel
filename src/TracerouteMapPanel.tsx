@@ -211,7 +211,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
         <MarkerClusterGroup maxClusterRadius={options.mapClusterRadius} /*options={{ singleMarkerMode: true }}*/>
           {Array.from(data.entries()).map(([key, points]) => {
             const [host, dest] = key.split('|');
-            return (
+            return !this.state.hiddenHosts.has(key) && (
               <RouteMarkers
                 key={key}
                 dest={dest}
@@ -220,7 +220,6 @@ export class TracerouteMapPanel extends Component<Props, State> {
                 color={palette()}
                 hopLabel={options.hopLabelType}
                 showSearchIcon={options.showSearchIconInHopLabel}
-                visible={!this.state.hiddenHosts.has(key)}
                 coordWrapper={this.wrapCoord}
               />
             );
@@ -311,12 +310,11 @@ const RouteMarkers: React.FC<{
   color: string;
   hopLabel: HopLabelType;
   showSearchIcon: boolean;
-  visible: boolean;
   coordWrapper?: (coord: LatLngTuple) => LatLngTuple;
-}> = ({ host, dest, points, color, hopLabel, showSearchIcon, visible, coordWrapper }) => {
+}> = ({ host, dest, points, color, hopLabel, showSearchIcon, coordWrapper }) => {
   let wrapCoord = coordWrapper ?? ((coord: LatLngTuple) => coord);
 
-  return visible ? (
+  return (
     <div data-host={host} data-dest={dest} data-points={points.length}>
       {points.map((point) => (
         <Marker
@@ -377,8 +375,6 @@ const RouteMarkers: React.FC<{
         color={color}
       ></Polyline>
     </div>
-  ) : (
-    <></>
   );
 };
 

@@ -1,9 +1,11 @@
 import React, { PureComponent, ChangeEvent } from 'react';
-import { Field, Button, TextArea, Select, Input, HorizontalGroup, VerticalGroup, Alert, CodeEditor } from '@grafana/ui';
+import { Field, Button, TextArea, Select, Input, HorizontalGroup, Alert } from '@grafana/ui';
 import { StandardEditorProps, SelectableValue } from '@grafana/data';
-import {} from '@emotion/core'; // https://github.com/grafana/grafana/issues/26512
-import Disclaimer from './Disclaimer.md'; 
+import { } from '@emotion/core'; // https://github.com/grafana/grafana/issues/26512
+import { MDXProvider } from '@mdx-js/react';
+import { AnchorHTMLAttributes } from 'react';
 
+import { GeoIPDisclaimer, IPSBNote, IPAPICoNote, IPInfoNote, IPDataNote, CustomAPINote, CustomFunctionNote } from './text';
 import { TracerouteMapOptions } from './options';
 import {
   GeoIPProviderKind,
@@ -32,7 +34,7 @@ export interface GeoIPProvidersOption {
   disclaimerAcknowledged: boolean;
 }
 
-interface Props extends StandardEditorProps<GeoIPProvidersOption, {}, TracerouteMapOptions> {}
+interface Props extends StandardEditorProps<GeoIPProvidersOption, {}, TracerouteMapOptions> { }
 
 type Test = { status?: 'pending' | 'ok' | 'failed'; /*pending: boolean; title?: string;*/ output?: string };
 
@@ -98,7 +100,7 @@ export class GeoIPProvidersEditor extends PureComponent<Props, State> {
         status: error ? 'failed' : 'ok',
         output: error
           ? (error.toString() || error.stack.toString()) +
-            '\n\n// For network error, the cause might be improper CORS header or ad blocker.'
+          '\n\n// For network error, the cause might be improper CORS header or ad blocker.'
           : `// Query result for ${TEST_IP}:\n` + JSON.stringify(geo, null, 4),
       },
     });
@@ -133,8 +135,11 @@ By default, cache are stored in sesseionStorage which is cleaned up when the bro
   }
 
   render() {
+    const components = {
+      a: (props: AnchorHTMLAttributes<HTMLAnchorElement>) => <a className="decorated" target="_blank" rel="noopener" {...props} />
+    };
     return (
-      <>
+      <MDXProvider components={components}>
         <Field /*label="Provider"*/>
           <Select
             options={geoIPSelectOptions}
@@ -162,14 +167,14 @@ By default, cache are stored in sesseionStorage which is cleaned up when the bro
         })()}
         {this.props.value.disclaimerAcknowledged || (
           <Field label="Disclaimer">
-            <Disclaimer />
+            <GeoIPDisclaimer />
           </Field>
         )}
         <Field>
           <HorizontalGroup align="center">
             <Button onClick={this.handleTestAndSave} disabled={this.state.test.status === 'pending'}>
               {/* @grafana/ui IconName types prevents using of fa-spin */}
-              {this.state.test.status === 'pending' ? <i className="fa fa-spinner fa-spin icon-right-space" /> : <></>}
+              {this.state.test.status === 'pending' && <i className="fa fa-spinner fa-spin icon-right-space" />}
               Test & Apply
             </Button>
             <Button variant="secondary" onClick={this.handleClearGeoIPCache}>
@@ -179,7 +184,7 @@ By default, cache are stored in sesseionStorage which is cleaned up when the bro
         </Field>
         <TestResult value={this.state.test} onClose={this.handleConfirmTestResult} />
         <hr /> {/*To seprate the provider editor with other options in its Category */}
-      </>
+      </MDXProvider>
     );
   }
 }
@@ -194,43 +199,25 @@ const geoIPSelectOptions: Array<SelectableValue<GeoIPProviderKind>> = [
   {
     label: 'IPData.co',
     value: 'ipdataco',
-    description: 'More accurate. Sign-up for 1.5k lookups/day free quota.',
+    description: 'Fairly accurate. Sign-up for 1.5k lookups/day free quota.',
   },
   {
     label: 'IPAPI.co',
     value: 'ipapico',
-    description: 'More accurate w/ limitations. 1k lookups/day free quota w/o sign-up.',
+    description: 'Fairly accurate w/ limitations. 1k lookups/day free quota w/o sign-up.',
   },
   { label: 'Custom API', value: 'custom-api', description: 'Define a custom API by specifying a URL.' },
   {
     label: 'Custom Function',
     value: 'custom-function',
-    description: 'Define a custom JavaScript function that requests external APIs.',
+    description: 'Define a custom JavaScript function from scratch.',
   },
 ];
 
 const IPSBConfig: React.FC = () => {
   return (
     <Field label="Note">
-      <>
-        <p>
-          <a className="decorated" href="https://ip.sb/api/" target="_blank" rel="noopener noreferrer">
-            IP.sb
-          </a>{' '}
-          provides with free IP-to-GeoLocation API unlimitedly, requiring no sign-up.
-        </p>
-        <p>
-          Their data comes from{' '}
-          <a className="decorated" href="https://www.maxmind.com/" target="_blank" rel="noopener noreferrer">
-            MaxMind
-          </a>
-          &apos;s GeoLite2 database (
-          <a className="decorated" href="https://github.com/fcambus/telize" target="_blank" rel="noopener noreferrer">
-            telize
-          </a>
-          ), of which the accuracy is fairly low.
-        </p>
-      </>
+      <IPSBNote />
     </Field>
   );
 };
@@ -238,27 +225,7 @@ const IPSBConfig: React.FC = () => {
 const IPAPICoConfig: React.FC = () => {
   return (
     <Field label="Note">
-      <>
-        <p>
-          <a className="decorated" href="https://ipapi.co" target="_blank" rel="noopener noreferrer">
-            IPAPI.co
-          </a>{' '}
-          provides IP-to-GeoLocation API with 1k lookups{' '}
-          <a className="decorated" href="https://ipapi.co/pricing/" target="_blank" rel="noopener noreferrer">
-            free quota
-          </a>{' '}
-          per day, requiring no sign-up.
-        </p>
-        <p>
-          This API has stricter limitation on burst requests. In case rate-limit is triggered, try to disable
-          parallelization or fasten the rate-limiting options (e.g. <code>3</code> and <code>2</code>, respectively).
-        </p>
-        <p>
-          Even though its location data are more accurate, geolocation data for some IP ranges are only available for
-          paid plans. Therefore, it is predicatable that some hops might disappear on the map due to lack of lat/long
-          data.
-        </p>
-      </>
+      <IPAPICoNote />
     </Field>
   );
 };
@@ -275,23 +242,7 @@ const IPInfoConfig: React.FC<{ config: IPInfo; onChange: (config: IPInfo) => voi
         />
       </Field>
       <Field label="Note">
-        <>
-          <p>
-            <a className="decorated" href="https://IPInfo.io" target="_blank" rel="noopener noreferrer">
-              IPInfo.io
-            </a>{' '}
-            is generally more accurate compared to MaxMind&apos;s GeoLite2 database.
-          </p>
-          <p>
-            {' '}
-            The{' '}
-            <a className="decorated" href="https://ipinfo.io/account/token" target="_blank" rel="noopener noreferrer">
-              API access token
-            </a>{' '}
-            is optional, but requests without token are rate-limited on a daily basis. After signing up, their free plan
-            provides with 50k lookups quota per month.
-          </p>
-        </>
+        <IPInfoNote />
       </Field>
     </>
   );
@@ -309,29 +260,7 @@ const IPDataCoConfig: React.FC<{ config: IPDataCo; onChange: (config: IPDataCo) 
         />
       </Field>
       <Field label="Note">
-        <>
-          <p>
-            <a className="decorated" href="https://ipdata.co/" target="_blank" rel="noopener noreferrer">
-              IPData.co
-            </a>{' '}
-            provides a free plan with 1.5k lookups per day quota for non-commercial use.
-          </p>
-          <p>
-            <a
-              className="decorated"
-              href="https://dashboard.ipdata.co/sign-up.html"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Sign-up
-            </a>{' '}
-            is required for an
-            <a className="decorated" href="https://ipinfo.io/account/token" target="_blank" rel="noopener noreferrer">
-              API key
-            </a>
-            .
-          </p>
-        </>
+        <IPDataNote />
       </Field>
     </>
   );
@@ -352,30 +281,7 @@ const CustomAPIConfig: React.FC<{ config: CustomAPI; onChange: (config: CustomAP
         />
       </Field>
       <Field label="Note">
-        <>
-          <p>
-            <code>{'{IP}'}</code> in the URL will substituted to the target IP address when querying.
-          </p>
-          <p>
-            The API is expected to return JSON data matching the following interface:
-            <pre>
-              <code>{CodeSnippets.ipgeoInterface}</code>
-            </pre>
-            with <code>Content-Type: application/json</code> and proper <code>Access-Control-Allow-Origin</code> HTTP
-            header set.
-          </p>
-          <p>
-            <strong>Example</strong>:{' '}
-            <a
-              className="decorated"
-              href="https://github.com/Gowee/traceroute-map-panel/blob/master/ipip-cfworker.js"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              ipip-cfworker.js
-            </a>
-          </p>
-        </>
+        <CustomAPINote />
       </Field>
     </>
   );
@@ -397,24 +303,7 @@ const CustomFunctionConfig: React.FC<{ config: CustomFunction; onChange: (config
         />
       </Field>
       <Field label="Note">
-        <>
-          <p>
-            The JavaScript function is expected to match the following signature:
-            <pre>
-              <code>{CodeSnippets.ip2geoSignature}</code>
-            </pre>
-            where <code>IPGeo</code> is:
-            <pre>
-              <code>{CodeSnippets.ipgeoInterface}</code>
-            </pre>
-            .
-          </p>
-          <p>
-            {' '}
-            As the function is executed in the browser runtime, external HTTP resources requested by the function should
-            have proper <code>Access-Control-Allow-Origin</code> HTTP header set.
-          </p>
-        </>
+        <CustomFunctionNote />
       </Field>
     </>
   );

@@ -116,15 +116,6 @@ export class HiddenHostsStorage {
 }
 
 export class CodeSnippets {
-  static ipgeoInterface = `export interface IPGeo {
-    region?: string,
-    label?: string, // e.g. org or ISP name
-    lat?: number,
-    lon?: number,
-}`;
-
-  static ip2geoSignature = `(ip: string) => Promise<IPGeo>`;
-
   static ip2geoFunction = `async function(ip) {
     const resp = await fetch(\`https://api.ip.sb/geoip/\${ip}\`, { headers: { 'Accept': "application/json" } });
     const data = await resp.json();
