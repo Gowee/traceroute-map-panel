@@ -1,0 +1,3 @@
+All APIs are provided as-is without affiliations in any way with the [Traceroute Panel Map Panel](https://github.com/Gowee/traceroute-map-panel) plugin. External querying requests are made in the browser with visitors' IPs and User-Agents attached inevitably but no third-party cookies. Some APIs might be even blocked by ad-blocking browser add-ons due to concerns about privacy.
+
+Depending on the service provider selected, additional terms of service or privacy policies may apply. Any text in notes does not constitute endorsements of any service providers or guarantees on accuracy, availability, or privacy. By proceeding, the user is at their own risk.
