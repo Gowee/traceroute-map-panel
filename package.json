@@ -18,12 +18,19 @@
     "email": "whygowe@gmail.com"
   },
   "devDependencies": {
+    "@babel/plugin-transform-react-jsx": "^7.12.17",
     "@grafana/data": "^7.4.0",
     "@grafana/toolkit": "^7.4.0",
-    "@grafana/ui": "^7.4.0"
+    "@grafana/ui": "^7.4.0",
+    "@mdx-js/loader": "^1.6.22",
+    "@mdx-js/react": "^1.6.22",
+    "babel-loader": "^8.2.2",
+    "remark": "^13.0.0",
+    "remark-loader": "^2.0.0",
+    "remark-react": "^8.0.0",
+    "ts-transformer-keys": "^0.4.1"
   },
   "resolutions": {
-    "@babel/preset-env": "7.9.0",
     "is-promise": "2.2.2",
     "typescript": "3.8"
   },
@@ -46,6 +53,6 @@
     "react-leaflet": "^2.6.3",
     "react-leaflet-control": "^2.1.2",
     "react-leaflet-markercluster": "^2.0.0",
-    "ts-transformer-keys": "^0.4.1"
+    "remark-html": "^13.0.1"
   }
 }

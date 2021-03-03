@@ -206,7 +206,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
         </style>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="http://osm.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+          attribution='&copy; <a href="http://osm.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
         />
         <MarkerClusterGroup maxClusterRadius={options.mapClusterRadius} /*options={{ singleMarkerMode: true }}*/>
           {Array.from(data.entries()).map(([key, points]) => {
@@ -326,7 +326,11 @@ const RouteMarkers: React.FC<{
         >
           <Popup className="point-popup">
             <div className="region-label">
-              <a href={`https://www.openstreetmap.org/#map=5/${point.lon}/${point.lat}`} target="_blank" rel="noopener">
+              <a
+                href={`https://www.openstreetmap.org/#map=5/${point.lon}/${point.lat}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 {point.region}
               </a>
             </div>
@@ -344,7 +348,7 @@ const RouteMarkers: React.FC<{
                       <span className="hop-ip-wrapper">
                         <span className="hop-ip">{hop.ip}</span>
                         {showSearchIcon && (
-                          <a href={`https://bgp.he.net/ip/${hop.ip}`} target="_blank" rel="noopener">
+                          <a href={`https://bgp.he.net/ip/${hop.ip}`} target="_blank" rel="noopener noreferrer">
                             <Icon name="search" title="Search the IP in bgp.he.net" style={{ marginBottom: 'unset' }} />
                           </a>
                         )}
