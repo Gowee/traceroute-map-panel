@@ -1,7 +1,7 @@
 import React, { PureComponent, ChangeEvent } from 'react';
 import { Field, Button, TextArea, Select, Input, HorizontalGroup, VerticalGroup, Alert, CodeEditor } from '@grafana/ui';
 import { StandardEditorProps, SelectableValue } from '@grafana/data';
-import {} from '@emotion/core'; // https://github.com/grafana/grafana/issues/26512
+import { } from '@emotion/core'; // https://github.com/grafana/grafana/issues/26512
 
 import { TracerouteMapOptions } from './options';
 import {
@@ -13,6 +13,7 @@ import {
   IP2Geo,
   CustomFunction,
   IPAPICo,
+  IPDataCo,
   GeoIPProviderKinds,
 } from './geoip';
 import { CodeSnippets, timeout } from './utils';
@@ -24,11 +25,13 @@ export interface GeoIPProvidersOption {
   ipsb: IPSB;
   ipinfo: IPInfo;
   ipapico: IPAPICo;
+  ipdataco: IPDataCo;
   'custom-api': CustomAPI;
   'custom-function': CustomFunction;
+  disclaimerAcknowledged: boolean
 }
 
-interface Props extends StandardEditorProps<GeoIPProvidersOption, {}, TracerouteMapOptions> {}
+interface Props extends StandardEditorProps<GeoIPProvidersOption, {}, TracerouteMapOptions> { }
 
 type Test = { status?: 'pending' | 'ok' | 'failed'; /*pending: boolean; title?: string;*/ output?: string };
 
@@ -41,6 +44,7 @@ export class GeoIPProvidersEditor extends PureComponent<Props, State> {
   static defaultValue: GeoIPProvidersOption = {
     active: 'ipsb',
     ...(Object.fromEntries(GeoIPProviderKinds.map((p) => [p, { kind: p }])) as any),
+    disclaimerAcknowledged: false
   };
 
   constructor(props: Props) {
@@ -69,6 +73,14 @@ export class GeoIPProvidersEditor extends PureComponent<Props, State> {
   }
 
   async handleTestAndSave() {
+    if (!this.props.value.disclaimerAcknowledged) {
+      if (confirm("By proceeding, you should have read the disclaimer.")) {
+        this.props.onChange({ ...this.props.value, disclaimerAcknowledged: true });
+      } else {
+        return;
+      }
+    }
+
     const provider = this.state.currentProvider;
     this.setState({ test: { status: 'pending' } });
     let geo;
@@ -85,7 +97,7 @@ export class GeoIPProvidersEditor extends PureComponent<Props, State> {
         status: error ? 'failed' : 'ok',
         output: error
           ? (error.toString() || error.stack.toString()) +
-            '\n\n// For network error, the cause might be improper CORS header or ad blocker.'
+          '\n\n// For network error, the cause might be improper CORS header or ad blocker.'
           : `// Query result for ${TEST_IP}:\n` + JSON.stringify(geo, null, 4),
       },
     });
@@ -103,7 +115,9 @@ export class GeoIPProvidersEditor extends PureComponent<Props, State> {
     if (
       confirm(
         `Clear all the GeoIP cache now?
+
 Note: This won't trigger refreshing the panel.
+
 By default, cache are stored in sesseionStorage which is cleaned up when the browser session ends.`
       )
     ) {
@@ -134,6 +148,8 @@ By default, cache are stored in sesseionStorage which is cleaned up when the bro
               return <IPInfoConfig onChange={this.handleGeoIPProviderChange} config={this.state.currentProvider} />;
             case 'ipsb':
               return <IPSBConfig />;
+            case 'ipdataco':
+              return <IPDataCoConfig onChange={this.handleGeoIPProviderChange} config={this.state.currentProvider} />;
             case 'ipapico':
               return <IPAPICoConfig />;
             case 'custom-api':
@@ -144,6 +160,16 @@ By default, cache are stored in sesseionStorage which is cleaned up when the bro
               );
           }
         })()}
+        {this.props.value.disclaimerAcknowledged ?? <Field label="Disclaimer">
+          <>
+            <p>
+              All APIs are provided as-is without affiliations in any way with the panel plugin. External querying requests are made in the browser with visitors' IPs and User-Agents attached inevitably. Some APIs might be blocked by ad-blocking browser add-ons.
+          </p>
+            <p>
+              Depending on which service provider is chosen, additional terms of service or privacy policies may apply. The Traceroute Panel Map plugin does not endorse any service providers or provide any guarantee on accuracy, availability, or privacy.
+            </p>
+          </>
+        </Field>}
         <Field>
           <HorizontalGroup align="center">
             <Button onClick={this.handleTestAndSave} disabled={this.state.test.status === 'pending'}>
@@ -164,19 +190,29 @@ By default, cache are stored in sesseionStorage which is cleaned up when the bro
 }
 
 const geoIPSelectOptions: Array<SelectableValue<GeoIPProviderKind>> = [
-  { label: 'IPInfo.io', value: 'ipinfo', description: 'API of IPInfo.io with some free quota' },
+  { label: 'IPInfo.io', value: 'ipinfo', description: 'Moderately accurate. W/ some free quota. Optional sign-up.' },
   {
     label: 'IP.sb (MaxMind GeoLite2)',
     value: 'ipsb',
-    description: "Free API of IP.sb, backed by MaxMind's GeoLite2 database",
+    description: "Less accurate. Unlimited. No sign-up.",
+  },
+  {
+    label: 'IPData.co',
+    value: 'ipdataco',
+    description: 'More accurate. Sign-up for 1.5k lookups/day free quota.',
   },
   {
     label: 'IPAPI.co',
     value: 'ipapico',
-    description: 'API of IPAPI.co with 1k lookups/d free quota',
+    description:
+      'More accurate w/ limitations. 1k lookups/day free quota w/o sign-up.',
   },
-  { label: 'Custom API', value: 'custom-api', description: 'Custom API defined by a URL' },
-  { label: 'Custom Function', value: 'custom-function', description: 'Custom JavaScript function' },
+  { label: 'Custom API', value: 'custom-api', description: 'Define a custom API by specifying a URL.' },
+  {
+    label: 'Custom Function',
+    value: 'custom-function',
+    description: 'Define a custom JavaScript function that requests external APIs.',
+  },
 ];
 
 const IPSBConfig: React.FC = () => {
@@ -184,18 +220,18 @@ const IPSBConfig: React.FC = () => {
     <Field label="Note">
       <>
         <p>
-          <a className="decorated" href="https://ip.sb/api/">
+          <a className="decorated" href="https://ip.sb/api/" target="_blank" rel="noopener">
             IP.sb
           </a>{' '}
           provides with free IP-to-GeoLocation API unlimitedly, requiring no sign-up.
         </p>
         <p>
           Their data comes from{' '}
-          <a className="decorated" href="https://www.maxmind.com/">
+          <a className="decorated" href="https://www.maxmind.com/" target="_blank" rel="noopener">
             MaxMind
           </a>
           &apos;s GeoLite2 database (
-          <a className="decorated" href="https://github.com/fcambus/telize">
+          <a className="decorated" href="https://github.com/fcambus/telize" target="_blank" rel="noopener">
             telize
           </a>
           ), of which the accuracy is fairly low.
@@ -210,17 +246,23 @@ const IPAPICoConfig: React.FC = () => {
     <Field label="Note">
       <>
         <p>
-          <a className="decorated" href="https://ipapi.co">
+          <a className="decorated" href="https://ipapi.co" target="_blank" rel="noopener">
             IPAPI.co
           </a>{' '}
-          provides IP-to-GeoLocation API with 1k lookups {' '}
-          <a className="decorated" href="https://ipapi.co/pricing/">
+          provides IP-to-GeoLocation API with 1k lookups{' '}
+          <a className="decorated" href="https://ipapi.co/pricing/" target="_blank" rel="noopener">
             free quota
-          </a> per day, requiring no sign-up.
+          </a>{' '}
+          per day, requiring no sign-up.
         </p>
         <p>
-          This API has stricter limitation on burst requests. In case rate-limit is triggered, try to disable parallelization
-          or fasten the rate-limiting options (e.g. <code>3</code> and <code>2</code>, respectively).
+          This API has stricter limitation on burst requests. In case rate-limit is triggered, try to disable
+          parallelization or fasten the rate-limiting options (e.g. <code>3</code> and <code>2</code>, respectively).
+        </p>
+        <p>
+          Even though its location data are more accurate, geolocation data for some IP ranges are only available for
+          paid plans. Therefore, it is predicatable that some hops might disappear on the map due to lack of lat/long
+          data.
         </p>
       </>
     </Field>
@@ -241,7 +283,7 @@ const IPInfoConfig: React.FC<{ config: IPInfo; onChange: (config: IPInfo) => voi
       <Field label="Note">
         <>
           <p>
-            <a className="decorated" href="https://IPInfo.io">
+            <a className="decorated" href="https://IPInfo.io" target="_blank" rel="noopener">
               IPInfo.io
             </a>{' '}
             is generally more accurate compared to MaxMind&apos;s GeoLite2 database.
@@ -249,11 +291,46 @@ const IPInfoConfig: React.FC<{ config: IPInfo; onChange: (config: IPInfo) => voi
           <p>
             {' '}
             The{' '}
-            <a className="decorated" href="https://ipinfo.io/account/token">
+            <a className="decorated" href="https://ipinfo.io/account/token" target="_blank" rel="noopener">
               API access token
             </a>{' '}
             is optional, but requests without token are rate-limited on a daily basis. After signing up, their free plan
             provides with 50k lookups quota per month.
+          </p>
+        </>
+      </Field>
+    </>
+  );
+};
+
+const IPDataCoConfig: React.FC<{ config: IPDataCo; onChange: (config: IPDataCo) => void }> = ({ config, onChange }) => {
+  return (
+    <>
+      <Field label="API Key" description="required">
+        <Input
+          type="text"
+          value={config.key}
+          placeholder="e.g. 57696e6e69652c2077696e6e69652c2068617070792077696e6e696521"
+          onChange={(event: ChangeEvent<HTMLInputElement>) => onChange({ ...config, key: event.target.value })}
+        />
+      </Field>
+      <Field label="Note">
+        <>
+          <p>
+            <a className="decorated" href="https://ipdata.co/" target="_blank" rel="noopener">
+              IPData.co
+            </a>{' '}
+            provides a free plan with 1.5k lookups per day quota for non-commercial use.
+          </p>
+          <p>
+            <a className="decorated" href="https://dashboard.ipdata.co/sign-up.html" target="_blank" rel="noopener">
+              Sign-up
+            </a>{' '}
+            is required for an
+            <a className="decorated" href="https://ipinfo.io/account/token" target="_blank" rel="noopener">
+              API key
+            </a>
+            .
           </p>
         </>
       </Field>
@@ -290,7 +367,12 @@ const CustomAPIConfig: React.FC<{ config: CustomAPI; onChange: (config: CustomAP
           </p>
           <p>
             <strong>Example</strong>:{' '}
-            <a className="decorated" href="https://github.com/Gowee/traceroute-map-panel/blob/master/ipip-cfworker.js">
+            <a
+              className="decorated"
+              href="https://github.com/Gowee/traceroute-map-panel/blob/master/ipip-cfworker.js"
+              target="_blank"
+              rel="noopener"
+            >
               ipip-cfworker.js
             </a>
           </p>

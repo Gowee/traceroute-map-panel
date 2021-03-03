@@ -91,6 +91,7 @@
 .map-indicator.loading {
     color: black;
     background: rgba(240, 248, 255, 0.618);
+    font-size: 1.2em;
 }
 
 .icon-right-space {
@@ -116,4 +117,64 @@ a.decorated {
 
 .point-popup .hop-nth {
     font-style: italic;
+    margin-right: 0.32em;
+}
+
+.point-popup .hop-entry {
+    display: flex;
+    flex-direction: row;
+    line-height: 1.2;
+}
+
+.point-popup .hop-entry:not(:last-child) {
+    margin-bottom: 0.3em;
+}
+
+.point-popup .hop-detail {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    flex-grow: 1;
+    /* Some WTF dirty fix for solving hop-detail overflows the width of hop-entry.
+        ref: https://stackoverflow.com/questions/38223879/white-space-nowrap-breaks-flexbox-layout */
+    min-width: 0;
+
+    margin-right: -0.15em;
+}
+
+.point-popup .hop-ip {
+    user-select: all;
+}
+
+.point-popup .hop-label, .point-popup .hop-ip {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.point-popup .hop-ip:not(:last-child) {
+    margin-right: 0.25em;
+}
+
+.point-popup .hop-ip-wrapper, .point-popup .hop-label {
+    margin-right: 0.15em;
+}
+
+.leaflet-popup-content {
+    /* It seems that leaflet calculates popup width in tricky ways, preventing flex elements from stretching its content width.
+        Here is a probably dirty fix. (TODO: compatibility?)
+        ref: https://github.com/Leaflet/Leaflet/blob/bc918d4bdc2ba189807bc207c77080fb41ecc196/src/layer/Popup.js#L211 */
+    width: max-content !important;
+    max-width: 19.5em;
+}
+
+.point-popup .region-label {
+    font-size: 1.1em;
+}
+
+.point-popup .hop-ip-wrapper {
+    display: flex;
+    justify-content: space-between;
+    flex-grow: 1;
 }

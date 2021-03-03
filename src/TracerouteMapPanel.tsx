@@ -16,7 +16,7 @@ import {
   LatLngBounds,
 } from './react-leaflet-compat';
 
-import { TracerouteMapOptions, HopLabel } from './options';
+import { TracerouteMapOptions, HopLabelType } from './options';
 import { IP2Geo, IPGeo } from './geoip';
 import {
   rainbowPalette,
@@ -206,7 +206,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
         </style>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          attribution='&copy; <a href="http://osm.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
         />
         <MarkerClusterGroup maxClusterRadius={options.mapClusterRadius} /*options={{ singleMarkerMode: true }}*/>
           {Array.from(data.entries()).map(([key, points]) => {
@@ -218,7 +218,8 @@ export class TracerouteMapPanel extends Component<Props, State> {
                 host={host}
                 points={points}
                 color={palette()}
-                hopLabel={options.hopLabel}
+                hopLabel={options.hopLabelType}
+                showSearchIcon={options.showSearchIconInHopLabel}
                 visible={!this.state.hiddenHosts.has(key)}
                 coordWrapper={this.wrapCoord}
               />
@@ -308,10 +309,11 @@ const RouteMarkers: React.FC<{
   dest: string;
   points: PathPoint[];
   color: string;
-  hopLabel: HopLabel;
+  hopLabel: HopLabelType;
+  showSearchIcon: boolean;
   visible: boolean;
   coordWrapper?: (coord: LatLngTuple) => LatLngTuple;
-}> = ({ host, dest, points, color, hopLabel, visible, coordWrapper }) => {
+}> = ({ host, dest, points, color, hopLabel, showSearchIcon, visible, coordWrapper }) => {
   let wrapCoord = coordWrapper ?? ((coord: LatLngTuple) => coord);
 
   return visible ? (
@@ -323,23 +325,34 @@ const RouteMarkers: React.FC<{
           className="point-marker"
         >
           <Popup className="point-popup">
-            <div className="region-label">{point.region}</div>
+            <div className="region-label">
+              <a href={`https://www.openstreetmap.org/#map=5/${point.lon}/${point.lat}`} target="_blank" rel="noopener">
+                {point.region}
+              </a>
+            </div>
             <hr />
             <ul className="hop-list">
               {point.hops.map((hop) => (
-                <li className="hop-item" key={hop.nth} title={`${hop.ip} RTT:${hop.rtt} Loss:${hop.loss}`}>
+                <li
+                  className="hop-entry"
+                  key={hop.nth}
+                  title={`${hop.ip} (${hop.label}) RTT:${hop.rtt} Loss:${hop.loss}`}
+                >
                   <span className="hop-nth">{hop.nth}.</span>{' '}
-                  <span className="hop-label">
-                    {(() => {
-                      switch (hopLabel) {
-                        case 'label':
-                          return hop.label;
-                        case 'ip':
-                          return hop.ip;
-                        case 'ipAndLabel':
-                          return `${hop.ip} (${hop.label})`;
-                      }
-                    })()}
+                  <span className="hop-detail">
+                    {(hopLabel === 'ip' || hopLabel === 'ipAndLabel') && (
+                      <span className="hop-ip-wrapper">
+                        <span className="hop-ip">{hop.ip}</span>
+                        {showSearchIcon && (
+                          <a href={`https://bgp.he.net/ip/${hop.ip}`} target="_blank" rel="noopener">
+                            <Icon name="search" title="Search the IP in bgp.he.net" style={{ marginBottom: 'unset' }} />
+                          </a>
+                        )}
+                      </span>
+                    )}
+                    {(hopLabel === 'ipAndLabel' || hopLabel === 'label') && (
+                      <span className="hop-label">{hop.label}</span>
+                    )}
                   </span>
                 </li>
               ))}

@@ -7,9 +7,9 @@ import { PACKAGE, isValidIPAddress, regionFromTriple } from './utils';
 // LocalStorage
 // IndexDB
 
-export type GeoIPProvider = IPInfo | IPSB | IPAPICo | CustomAPI | CustomFunction;
+export type GeoIPProvider = IPInfo | IPSB | IPDataCo | IPAPICo | CustomAPI | CustomFunction;
 // Ref: https://stackoverflow.com/questions/45251664/typescript-derive-union-type-from-tuple-array-values
-export const GeoIPProviderKinds = ['ipinfo', 'ipsb', 'ipapico', 'custom-api', 'custom-function'] as const;
+export const GeoIPProviderKinds = ['ipinfo', 'ipsb', 'ipdataco', 'ipapico', 'custom-api', 'custom-function'] as const;
 export type GeoIPProviderKind = typeof GeoIPProviderKinds[number];
 
 // eslint-disable-next-line @typescript-eslint/interface-name-prefix
@@ -24,8 +24,15 @@ export interface IPSB {
 }
 
 // eslint-disable-next-line @typescript-eslint/interface-name-prefix
+export interface IPDataCo {
+  kind: 'ipdataco';
+  key: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface IPAPICo {
   kind: 'ipapico';
+  key?: string
 }
 
 export interface CustomAPI {
@@ -79,6 +86,9 @@ export class IP2Geo {
         break;
       case 'ipsb':
         fn = IP2Geo.IPSB;
+        break;
+      case 'ipdataco':
+        fn = (ip: string) => IP2Geo.IPDataCo(ip, provider.key);
         break;
       case 'ipapico':
         fn = IP2Geo.IPAPICo;
@@ -134,6 +144,18 @@ export class IP2Geo {
     const { country, latitude, longitude, isp } = data;
     const geo = { region: country, label: isp, lon: longitude, lat: latitude };
     return geo;
+  }
+
+  static async IPDataCo(ip: string, key: string): Promise<IPGeo> {
+    const r = await fetch(`https://api.ipdata.co/${ip}?api-key=${key}`, { headers: { Accept: 'application/json' } });
+    const d = await r.json();
+    if (d.ip === undefined) {
+      throw new Error(`IPData.co: ${d.message}`);
+    }
+    const { country_name, region, city, latitude, longitude, asn: network } = d;
+    const regionFull = regionFromTriple(country_name, region, city);
+    const label = [network?.asn, network?.name].filter((value) => value).join(" ");
+    return { region: regionFull, label: label, lon: longitude, lat: latitude };
   }
 
   static async IPAPICo(ip: string): Promise<IPGeo> {
