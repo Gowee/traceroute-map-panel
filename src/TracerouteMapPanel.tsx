@@ -1,3 +1,5 @@
+/* eslint-disable react/jsx-no-target-blank */
+
 import React, { Component, createRef, MouseEvent } from 'react';
 import { PanelProps, LoadingState, DataFrame } from '@grafana/data';
 import { Icon, Button, Tooltip, Spinner } from '@grafana/ui';
@@ -206,22 +208,24 @@ export class TracerouteMapPanel extends Component<Props, State> {
         </style>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="http://osm.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
+          attribution='&copy; <a href="http://osm.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
         />
         <MarkerClusterGroup maxClusterRadius={options.mapClusterRadius} /*options={{ singleMarkerMode: true }}*/>
           {Array.from(data.entries()).map(([key, points]) => {
             const [host, dest] = key.split('|');
-            return !this.state.hiddenHosts.has(key) && (
-              <RouteMarkers
-                key={key}
-                dest={dest}
-                host={host}
-                points={points}
-                color={palette()}
-                hopLabel={options.hopLabelType}
-                showSearchIcon={options.showSearchIconInHopLabel}
-                coordWrapper={this.wrapCoord}
-              />
+            return (
+              !this.state.hiddenHosts.has(key) && (
+                <RouteMarkers
+                  key={key}
+                  dest={dest}
+                  host={host}
+                  points={points}
+                  color={palette()}
+                  hopLabel={options.hopLabelType}
+                  showSearchIcon={options.showSearchIconInHopLabel}
+                  coordWrapper={this.wrapCoord}
+                />
+              )
             );
           })}
         </MarkerClusterGroup>
@@ -324,11 +328,7 @@ const RouteMarkers: React.FC<{
         >
           <Popup className="point-popup">
             <div className="region-label">
-              <a
-                href={`https://www.openstreetmap.org/#map=5/${point.lon}/${point.lat}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={`https://www.openstreetmap.org/#map=5/${point.lat}/${point.lon}`} target="_blank" rel="noopener">
                 {point.region}
               </a>
             </div>
@@ -338,7 +338,7 @@ const RouteMarkers: React.FC<{
                 <li
                   className="hop-entry"
                   key={hop.nth}
-                  title={`${hop.ip} (${hop.label}) RTT:${hop.rtt} Loss:${hop.loss}`}
+                  title={`${hop.ip} (${hop.label ?? 'No network info available'}) RTT:${hop.rtt} Loss:${hop.loss}`}
                 >
                   <span className="hop-nth">{hop.nth}.</span>{' '}
                   <span className="hop-detail">
@@ -346,7 +346,7 @@ const RouteMarkers: React.FC<{
                       <span className="hop-ip-wrapper">
                         <span className="hop-ip">{hop.ip}</span>
                         {showSearchIcon && (
-                          <a href={`https://bgp.he.net/ip/${hop.ip}`} target="_blank" rel="noopener noreferrer">
+                          <a href={`https://bgp.he.net/ip/${hop.ip}`} target="_blank" rel="noopener">
                             <Icon name="search" title="Search the IP in bgp.he.net" style={{ marginBottom: 'unset' }} />
                           </a>
                         )}

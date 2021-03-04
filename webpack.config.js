@@ -1,6 +1,3 @@
-const RemarkHTML = require("remark-html");
-const remark2react = require("remark-react");
-
 module.exports.getWebpackConfig = (config, options) => ({
     ...config,
     module: {
@@ -27,3 +24,5 @@ module.exports.getWebpackConfig = (config, options) => ({
         ]
     }
 })
+
+// Ref: https://github.com/grafana/grafana/blob/master/packages/grafana-toolkit/README.md

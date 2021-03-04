@@ -1,15 +1,15 @@
 /* eslint-disable */
 
-import { PACKAGE, isValidIPAddress, regionFromTriple } from './utils';
+import { PACKAGE, isValidIPAddress, regionJoin, orgJoin, eliminatePrefixOrSuffix } from './utils';
 
 // candidante cache providers:
 // SessionStorage
 // LocalStorage
 // IndexDB
 
-export type GeoIPProvider = IPInfo | IPSB | IPDataCo | IPAPICo | CustomAPI | CustomFunction;
+export type GeoIPProvider = IPInfo | IPSB | IPDataCo | IPGeolocation | BigDataCloud | IPAPICo | CustomAPI | CustomFunction;
 // Ref: https://stackoverflow.com/questions/45251664/typescript-derive-union-type-from-tuple-array-values
-export const GeoIPProviderKinds = ['ipinfo', 'ipsb', 'ipdataco', 'ipapico', 'custom-api', 'custom-function'] as const;
+export const GeoIPProviderKinds = ['ipinfo', 'ipsb', 'ipdataco', 'ipgeolocation', 'bigdatacloud', 'ipapico', 'custom-api', 'custom-function'] as const;
 export type GeoIPProviderKind = typeof GeoIPProviderKinds[number];
 
 // eslint-disable-next-line @typescript-eslint/interface-name-prefix
@@ -26,6 +26,18 @@ export interface IPSB {
 // eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface IPDataCo {
   kind: 'ipdataco';
+  key: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/interface-name-prefix
+export interface IPGeolocation {
+  kind: 'ipgeolocation';
+  key: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/interface-name-prefix
+export interface BigDataCloud {
+  kind: 'bigdatacloud';
   key: string;
 }
 
@@ -90,6 +102,12 @@ export class IP2Geo {
       case 'ipdataco':
         fn = (ip: string) => IP2Geo.IPDataCo(ip, provider.key);
         break;
+      case 'ipgeolocation':
+        fn = (ip: string) => IP2Geo.IPGeolocation(ip, provider.key);
+        break;
+      case 'bigdatacloud':
+        fn = (ip: string) => IP2Geo.BigDataCloud(ip, provider.key);
+        break;
       case 'ipapico':
         fn = IP2Geo.IPAPICo;
         break;
@@ -132,7 +150,7 @@ export class IP2Geo {
     }
     const { country, city, region, loc, org } = data;
     // const region_city = city && `${city.indexOf(region) === -1 ? `${city}, ${region}` : city}, ${country}`;
-    const regionFull = regionFromTriple(country, region, city);
+    const regionFull = regionJoin(country, region, city);
     const [lat, lon] = loc ? loc.split(',').map(parseFloat) : [undefined, undefined];
     const geo = { region: regionFull, label: org, lat, lon };
     return geo;
@@ -153,9 +171,42 @@ export class IP2Geo {
       throw new Error(`IPData.co: ${d.message}`);
     }
     const { country_name, region, city, latitude, longitude, asn: network } = d;
-    const regionFull = regionFromTriple(country_name, region, city);
+    const regionFull = regionJoin(country_name, region, city);
     const label = [network?.asn, network?.name].filter((value) => value).join(" ");
     return { region: regionFull, label: label, lon: longitude, lat: latitude };
+  }
+
+  static async IPGeolocation(ip: string, key: string): Promise<IPGeo> {
+    const r = await fetch(`https://api.ipgeolocation.io/ipgeo?apiKey=${key}&ip=${ip}`, { headers: { Accept: 'application/json' } });
+    const d = await r.json();
+    if (d.ip === undefined) {
+      throw new Error(`IPGeolocation.io: ${d.message}`);
+    }
+    const { country_name, state_prov, city, district, latitude, longitude, isp, organization } = d;
+    const regionFull = regionJoin(district, city, state_prov, country_name);
+    const label = orgJoin(isp, organization);
+    return { region: regionFull, label: label, lon: parseFloat(longitude), lat: parseFloat(latitude) };
+  }
+
+  static async BigDataCloud(ip: string, key: string): Promise<IPGeo> {
+    const r = await fetch(`https://api.bigdatacloud.net/data/ip-geolocation?key=${key}&ip=${ip}`, { headers: { Accept: 'application/json' } });
+    const d = await r.json();
+    if (d.ip === undefined) {
+      throw new Error(`BigDataCloud.com: ${d.description}`);
+    }
+    const { country, location, network, carriers } = d;
+    const country_name = country?.isoName;
+    const state_or_province = location?.isoPrincipalSubdivision;
+    const city = location?.city;
+    const lat = location.latitude;
+    const lon = location.longitude;
+    const organization = network?.organization;
+    const asn = carriers?.asn;
+    console.log(city, state_or_province, country_name);
+    const region = regionJoin(city, state_or_province, country_name);
+    const label = eliminatePrefixOrSuffix(organization, asn).join(" via ");
+    console.log(organization, asn, label);
+    return { region, label, lon, lat };
   }
 
   static async IPAPICo(ip: string): Promise<IPGeo> {
@@ -165,7 +216,7 @@ export class IP2Geo {
       throw new Error(`IPAPI.co: ${d.reason} (${d.message})`);
     }
     const { country_name, region, city, latitude, longitude, asn, org } = d;
-    const regionFull = regionFromTriple(country_name, region, city);
+    const regionFull = regionJoin(city, region, country_name);
     const label = [asn, org].filter((value) => value).join(" ");
     return { region: regionFull, label: label, lon: longitude, lat: latitude };
   }

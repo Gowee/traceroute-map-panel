@@ -1,11 +1,21 @@
 import React, { PureComponent, ChangeEvent } from 'react';
 import { Field, Button, TextArea, Select, Input, HorizontalGroup, Alert } from '@grafana/ui';
 import { StandardEditorProps, SelectableValue } from '@grafana/data';
-import { } from '@emotion/core'; // https://github.com/grafana/grafana/issues/26512
+import {} from '@emotion/core'; // https://github.com/grafana/grafana/issues/26512
 import { MDXProvider } from '@mdx-js/react';
 import { AnchorHTMLAttributes } from 'react';
 
-import { GeoIPDisclaimer, IPSBNote, IPAPICoNote, IPInfoNote, IPDataNote, CustomAPINote, CustomFunctionNote } from './text';
+import {
+  GeoIPDisclaimer,
+  IPSBNote,
+  IPDataNote,
+  IPInfoNote,
+  IPGeolocationNote,
+  BigDataCloudNote,
+  IPAPICoNote,
+  CustomAPINote,
+  CustomFunctionNote,
+} from './text';
 import { TracerouteMapOptions } from './options';
 import {
   GeoIPProviderKind,
@@ -18,6 +28,8 @@ import {
   IPAPICo,
   IPDataCo,
   GeoIPProviderKinds,
+  IPGeolocation,
+  BigDataCloud,
 } from './geoip';
 import { CodeSnippets, timeout } from './utils';
 
@@ -28,13 +40,15 @@ export interface GeoIPProvidersOption {
   ipsb: IPSB;
   ipinfo: IPInfo;
   ipapico: IPAPICo;
+  ipgeolocation: IPGeolocation;
+  bigdatacloud: BigDataCloud;
   ipdataco: IPDataCo;
   'custom-api': CustomAPI;
   'custom-function': CustomFunction;
   disclaimerAcknowledged: boolean;
 }
 
-interface Props extends StandardEditorProps<GeoIPProvidersOption, {}, TracerouteMapOptions> { }
+interface Props extends StandardEditorProps<GeoIPProvidersOption, {}, TracerouteMapOptions> {}
 
 type Test = { status?: 'pending' | 'ok' | 'failed'; /*pending: boolean; title?: string;*/ output?: string };
 
@@ -100,7 +114,7 @@ export class GeoIPProvidersEditor extends PureComponent<Props, State> {
         status: error ? 'failed' : 'ok',
         output: error
           ? (error.toString() || error.stack.toString()) +
-          '\n\n// For network error, the cause might be improper CORS header or ad blocker.'
+            '\n\n// For network error, the cause might be improper CORS header or ad blocker.'
           : `// Query result for ${TEST_IP}:\n` + JSON.stringify(geo, null, 4),
       },
     });
@@ -136,7 +150,9 @@ By default, cache are stored in sesseionStorage which is cleaned up when the bro
 
   render() {
     const components = {
-      a: (props: AnchorHTMLAttributes<HTMLAnchorElement>) => <a className="decorated" target="_blank" rel="noopener" {...props} />
+      a: (props: AnchorHTMLAttributes<HTMLAnchorElement>) => (
+        <a className="decorated" target="_blank" rel="noopener" {...props} />
+      ),
     };
     return (
       <MDXProvider components={components}>
@@ -155,6 +171,14 @@ By default, cache are stored in sesseionStorage which is cleaned up when the bro
               return <IPSBConfig />;
             case 'ipdataco':
               return <IPDataCoConfig onChange={this.handleGeoIPProviderChange} config={this.state.currentProvider} />;
+            case 'ipgeolocation':
+              return (
+                <IPGeolocationConfig onChange={this.handleGeoIPProviderChange} config={this.state.currentProvider} />
+              );
+            case 'bigdatacloud':
+              return (
+                <BigDataCloudConfig onChange={this.handleGeoIPProviderChange} config={this.state.currentProvider} />
+              );
             case 'ipapico':
               return <IPAPICoConfig />;
             case 'custom-api':
@@ -190,7 +214,7 @@ By default, cache are stored in sesseionStorage which is cleaned up when the bro
 }
 
 const geoIPSelectOptions: Array<SelectableValue<GeoIPProviderKind>> = [
-  { label: 'IPInfo.io', value: 'ipinfo', description: 'Moderately accurate. W/ some free quota. Optional sign-up.' },
+  { label: 'IPInfo.io', value: 'ipinfo', description: 'Moderately accurate. W/ free quota. Optional sign-up.' },
   {
     label: 'IP.sb (MaxMind GeoLite2)',
     value: 'ipsb',
@@ -199,12 +223,22 @@ const geoIPSelectOptions: Array<SelectableValue<GeoIPProviderKind>> = [
   {
     label: 'IPData.co',
     value: 'ipdataco',
-    description: 'Fairly accurate. Sign-up for 1.5k lookups/day free quota.',
+    description: 'Pretty accurate. Sign-up for 1.5k lookups/day free quota.',
+  },
+  {
+    label: 'IPGeolocation.io',
+    value: 'ipgeolocation',
+    description: 'Fairly accurate. Sign-up for 1k lookups/day free quota.',
+  },
+  {
+    label: 'BigDataCloud.com',
+    value: 'bigdatacloud',
+    description: 'Pretty accurate. Sign-up for 10k lookups/month free quota.',
   },
   {
     label: 'IPAPI.co',
     value: 'ipapico',
-    description: 'Fairly accurate w/ limitations. 1k lookups/day free quota w/o sign-up.',
+    description: 'Pretty accurate w/ limitations. 1k lookups/day free quota w/o sign-up.',
   },
   { label: 'Custom API', value: 'custom-api', description: 'Define a custom API by specifying a URL.' },
   {
@@ -218,14 +252,6 @@ const IPSBConfig: React.FC = () => {
   return (
     <Field label="Note">
       <IPSBNote />
-    </Field>
-  );
-};
-
-const IPAPICoConfig: React.FC = () => {
-  return (
-    <Field label="Note">
-      <IPAPICoNote />
     </Field>
   );
 };
@@ -263,6 +289,56 @@ const IPDataCoConfig: React.FC<{ config: IPDataCo; onChange: (config: IPDataCo) 
         <IPDataNote />
       </Field>
     </>
+  );
+};
+
+const IPGeolocationConfig: React.FC<{ config: IPGeolocation; onChange: (config: IPGeolocation) => void }> = ({
+  config,
+  onChange,
+}) => {
+  return (
+    <>
+      <Field label="API Key" description="required">
+        <Input
+          type="text"
+          value={config.key}
+          placeholder="e.g. 2d081e1e105757101e1e082d..."
+          onChange={(event: ChangeEvent<HTMLInputElement>) => onChange({ ...config, key: event.target.value })}
+        />
+      </Field>
+      <Field label="Note">
+        <IPGeolocationNote />
+      </Field>
+    </>
+  );
+};
+
+const BigDataCloudConfig: React.FC<{ config: BigDataCloud; onChange: (config: BigDataCloud) => void }> = ({
+  config,
+  onChange,
+}) => {
+  return (
+    <>
+      <Field label="API Key" description="required">
+        <Input
+          type="text"
+          value={config.key}
+          placeholder="e.g. 2d081e1e105757101e1e082d..."
+          onChange={(event: ChangeEvent<HTMLInputElement>) => onChange({ ...config, key: event.target.value })}
+        />
+      </Field>
+      <Field label="Note">
+        <BigDataCloudNote />
+      </Field>
+    </>
+  );
+};
+
+const IPAPICoConfig: React.FC = () => {
+  return (
+    <Field label="Note">
+      <IPAPICoNote />
+    </Field>
   );
 };
 

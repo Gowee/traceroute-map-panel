@@ -225,11 +225,20 @@ export async function resolveHostname(name: string, noCache = false): Promise<st
   return address;
 }
 
-export function regionFromTriple(country?: string, state_or_province?: string, city?: string) {
-  if (city && state_or_province?.startsWith(city)) {
-    state_or_province = undefined;
-  } else if (state_or_province && city?.startsWith(state_or_province)) {
-    city = undefined;
+export function regionJoin(...units: Array<string | undefined>): string | undefined {
+  return units.reduce((p, x) => eliminatePrefixOrSuffix(p, x).join(', '));
+}
+
+export function orgJoin(org1: string | undefined, org2: string | undefined): string | undefined {
+  [org1, org2] = eliminatePrefixOrSuffix(org1, org2);
+  return org1 && (org2 ? `${org1} (${org2})` : org1);
+}
+
+export function eliminatePrefixOrSuffix(label1?: string, label2?: string): string[] {
+  if (label1 && label2?.startsWith(label1)) {
+    label1 = undefined;
+  } else if (label2 && label1?.startsWith(label2)) {
+    label2 = undefined;
   }
-  return [city, state_or_province, country].filter((value) => value).join(', ');
+  return [label1, label2].filter((value) => value) as string[];
 }
