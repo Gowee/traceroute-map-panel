@@ -27,6 +27,7 @@ import {
   simplyHostname,
   batch_with_throttle,
   resolveHostname,
+  makeThrottler,
 } from './utils';
 import 'panel.css';
 
@@ -117,16 +118,18 @@ export class TracerouteMapPanel extends Component<Props, State> {
       throw new Error('Data is empty or not formatted as table');
     }
     const options = this.props.options;
-    const ip2geo = IP2Geo.fromProvider(options.geoIPProviders[options.geoIPProviders.active]);
-    const parallelizer: <T extends unknown>(v: Array<() => Promise<T>>) => Promise<T[]> = options.parallelizeGeoIP
-      ? (v) => batch_with_throttle(v, options.concurrentRequests, options.requestsPerSecond)
-      : (v) => batch_with_throttle(v, 1, 0xff);
+    const throttler = options.parallelizeGeoIP
+      ? makeThrottler<string, unknown[], IPGeo>(options.concurrentRequests, options.requestsPerSecond)
+      : undefined;
+
+    const ip2geo = IP2Geo.fromProvider(options.geoIPProviders[options.geoIPProviders.active], throttler);
 
     let entries = dataFrameToEntries(series[0]);
 
     if (options.srcHostAsZerothHop) {
+      // No option for parallelization of DoH resolution so far. Just borrow it from GeoIP.
       let zerothHopEntries: DataEntry[] = [];
-      await parallelizer(
+      await Promise.all(
         Array.from(new Set(entries.map((entry) => `${entry[0]}|${entry[1]}`)).values()).map((hostDest) => async () => {
           const [host, dest] = hostDest.split('|');
           const address = await resolveHostname(host);
@@ -135,10 +138,11 @@ export class TracerouteMapPanel extends Component<Props, State> {
           }
         })
       );
+      // Closer hops come first.
       entries = zerothHopEntries.concat(entries);
     }
 
-    const geos = await parallelizer(
+    const geos = await Promise.all(
       entries.map((entry) => async () => {
         const ip = entry[3];
         return await ip2geo(ip);

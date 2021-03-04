@@ -90,7 +90,7 @@ export const Cache = {
 export class IP2Geo {
   defaultProvider: GeoIPProvider = { kind: 'ipsb' } as IPSB;
 
-  static fromProvider(provider: GeoIPProvider) {
+  static fromProvider(provider: GeoIPProvider, throttler?: (fn: (ip: string) => Promise<IPGeo>) => (ip: string) => Promise<IPGeo>) {
     let fn: (ip: string) => Promise<IPGeo>;
     switch (provider.kind) {
       case 'ipinfo':
@@ -114,12 +114,16 @@ export class IP2Geo {
       case 'custom-api':
         fn = (ip: string) => IP2Geo.GenericAPI(provider.url, ip);
         break;
-      default:
-        /* case 'custom-function': */
+      case 'custom-function':
+        fn = undefined as any; // Fix "Variable 'fn' is used before being assigned.""
         // eslint-disable-next-line no-eval
         eval(`fn = ${provider.code}`);
     }
     // TODO: sanitize API query result
+
+    if (throttler) {
+      fn = throttler(fn);
+    }
 
     async function ip2geo(ip: string, noCache = false): Promise<IPGeo> {
       if (isValidIPAddress(ip)) {
