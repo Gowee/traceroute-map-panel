@@ -124,13 +124,13 @@ export class TracerouteMapPanel extends Component<Props, State> {
 
     const ip2geo = IP2Geo.fromProvider(options.geoIPProviders[options.geoIPProviders.active], throttler);
 
-    let entries = dataFrameToEntries(series[0]);
+    let entries = dataFrameToEntries( series[0]);
 
     if (options.srcHostAsZerothHop) {
       // No option for parallelization of DoH resolution so far. Just borrow it from GeoIP.
       let zerothHopEntries: DataEntry[] = [];
       await Promise.all(
-        Array.from(new Set(entries.map((entry) => `${entry[0]}|${entry[1]}`)).values()).map((hostDest) => async () => {
+        Array.from(new Set(entries.map((entry) => `${entry[0]}|${entry[1]}`)).values()).map(async (hostDest) => {
           const [host, dest] = hostDest.split('|');
           const address = await resolveHostname(host);
           if (address) {
@@ -143,11 +143,12 @@ export class TracerouteMapPanel extends Component<Props, State> {
     }
 
     const geos = await Promise.all(
-      entries.map((entry) => async () => {
+      entries.map(async (entry) => {
         const ip = entry[3];
         return await ip2geo(ip);
       })
     );
+    console.log(entries, geos);
 
     const routes = await entriesToRoutes(_.zip(entries, geos) as Array<[DataEntry, IPGeo]>);
 
