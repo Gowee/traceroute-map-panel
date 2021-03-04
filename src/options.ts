@@ -17,6 +17,7 @@ export interface TracerouteMapOptions {
   srcHostAsZerothHop: boolean;
   hopLabelType: HopLabelType;
   showSearchIconInHopLabel: boolean;
+  bogonFilteringSpace: undefined | 'bogon' | 'extendedBogon';
 }
 
 export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<TracerouteMapOptions>) =>
@@ -33,7 +34,7 @@ export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<Traceroute
       description: 'The radius within which points will be unified as one on the map',
       defaultValue: 8,
       settings: {
-        min: 5,
+        min: 0,
         max: 50,
       },
     })
@@ -59,16 +60,16 @@ export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<Traceroute
       description: 'Try to resovle the src hostname as the IP of the 0-th hop',
       defaultValue: true,
     })
-    .addSelect({
+    .addRadio({
       path: 'hopLabelType',
       name: 'Hop Label Content',
       description: 'The label contents of hops in popups of point markers',
       defaultValue: 'ipAndLabel',
       settings: {
         options: [
-          { label: 'Label only', value: 'label', description: 'Shows oranization/network labels from GeoIP only' },
-          { label: 'IP only', value: 'ip', description: 'Shows IP addresses only' },
-          { label: 'Both IP and Label', value: 'ipAndLabel', description: 'Show both IP addresses and geo labels' },
+          { label: 'Label', value: 'label', description: 'Shows oranization/network labels from GeoIP only' },
+          { label: 'IP', value: 'ip', description: 'Shows IP addresses only' },
+          { label: 'Both', value: 'ipAndLabel', description: 'Show both IP addresses and geo labels' },
         ],
       },
     })
@@ -84,6 +85,28 @@ export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<Traceroute
       name: 'Provider',
       editor: GeoIPProvidersEditor,
       defaultValue: GeoIPProvidersEditor.defaultValue,
+      category: ['GeoIP Service'],
+    })
+    .addSelect({
+      path: 'bogonFilteringSpace',
+      name: 'Bogon Filtering Space' /* Filter Out "Bogus" IPs */,
+      description: 'Proactively filter out IPs in Bogon Space',
+      defaultValue: 'bogon',
+      settings: {
+        options: [
+          { label: 'None', value: undefined, description: 'Pass all IPs to GeoIP API without filtering' },
+          {
+            label: 'Bogon (private + reserved)',
+            value: 'bogon',
+            description: 'Exclude private or reserved IPs like 10/8',
+          },
+          {
+            label: 'Bogon + DoD',
+            value: 'extendedBogon',
+            description: 'In addition to Bogon, exclude some DoD IPs like 11/8',
+          },
+        ],
+      },
       category: ['GeoIP Service'],
     })
     .addBooleanSwitch({

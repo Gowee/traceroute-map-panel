@@ -1875,10 +1875,10 @@
     "@types/through" "*"
     rxjs "^6.4.0"
 
-"@types/ip-address@^5.8.2":
-  version "5.8.2"
-  resolved "https://registry.yarnpkg.com/@types/ip-address/-/ip-address-5.8.2.tgz#5e413c477f78b3a264745eac937538a6e6e0c1f6"
-  integrity sha512-LFlDGRjJDnahfPyNCZGXvlaevSmZTi/zDxjTdXeTs8TQ9pQkNZKbCWaJXW29a3bGPRsASqeO+jGgZlaTUi9jTw==
+"@types/ip-address@^6.0.0":
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/@types/ip-address/-/ip-address-6.0.0.tgz#cd80b2a4a9a97b96404c5f6dc4bcb85f07720f54"
+  integrity sha512-+UJ03Xf/kPz3GthtUeO7iSokzTvHqhuyh6DBstdB3MSaMEYHCiggwVIPtIiW6E3PeGjp8+Feb6IyfWSI5fyxmw==
   dependencies:
     "@types/jsbn" "*"
 
@@ -6765,7 +6765,7 @@ invert-kv@^2.0.0:
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-2.0.0.tgz#7393f5afa59ec9ff5f67a27620d11c226e3eec02"
   integrity sha512-wPVv/y/QQ/Uiirj/vh3oP+1Ww+AWehmi1g5fFWGPF6IpCBCDVrhgHRMvrLfdYcwDh3QJbGXDW4JAuzxElLSqKA==
 
-ip-address@^6.3.0:
+ip-address@^6.0.0:
   version "6.4.0"
   resolved "https://registry.yarnpkg.com/ip-address/-/ip-address-6.4.0.tgz#8f7d43e76002a1c3c230792c748f5d8c143f908a"
   integrity sha512-c5uxc2WUTuRBVHT/6r4m7HIr/DfV0bF6DvLH3iZGSK8wp8iMwwZSgIq2do0asFf8q9ECug0SE+6+1ACMe4sorA==

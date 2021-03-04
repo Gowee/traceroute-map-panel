@@ -25,9 +25,10 @@ import {
   round,
   HiddenHostsStorage,
   simplyHostname,
-  batch_with_throttle,
+  isBogusIPAddress,
   resolveHostname,
   makeThrottler,
+  parseIPAddress,
 } from './utils';
 import 'panel.css';
 
@@ -93,7 +94,8 @@ export class TracerouteMapPanel extends Component<Props, State> {
     }
     if (
       (this.props.data.series !== this.state.series && this.props.data.state === LoadingState.Done) ||
-      this.props.options.srcHostAsZerothHop !== prevProps.options.srcHostAsZerothHop
+      this.props.options.srcHostAsZerothHop !== prevProps.options.srcHostAsZerothHop ||
+      this.props.options.bogonFilteringSpace !== this.props.options.bogonFilteringSpace
     ) {
       this.updateData();
     }
@@ -124,7 +126,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
 
     const ip2geo = IP2Geo.fromProvider(options.geoIPProviders[options.geoIPProviders.active], throttler);
 
-    let entries = dataFrameToEntries( series[0]);
+    let entries = dataFrameToEntries(series[0]);
 
     if (options.srcHostAsZerothHop) {
       // No option for parallelization of DoH resolution so far. Just borrow it from GeoIP.
@@ -141,6 +143,21 @@ export class TracerouteMapPanel extends Component<Props, State> {
       // Closer hops come first.
       entries = zerothHopEntries.concat(entries);
     }
+
+    let bogonFilterer = (_: string) => false;
+    console.log(options.bogonFilteringSpace, Boolean(options.bogonFilteringSpace));
+    if (options.bogonFilteringSpace) {
+      console.log('L418');
+      bogonFilterer = (ip: string) => {
+        const address = parseIPAddress(ip);
+        console.log(address);
+        return address ? isBogusIPAddress(address, options.bogonFilteringSpace === 'extendedBogon') : true;
+      };
+    }
+
+    console.log(bogonFilterer);
+
+    entries = entries.filter((entry) => !bogonFilterer(entry[3] /* hop IP */));
 
     const geos = await Promise.all(
       entries.map(async (entry) => {

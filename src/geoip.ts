@@ -198,18 +198,18 @@ export class IP2Geo {
     if (d.ip === undefined) {
       throw new Error(`BigDataCloud.com: ${d.description}`);
     }
-    const { country, location, network, carriers } = d;
+    const { country, location, network } = d;
     const country_name = country?.isoName;
     const state_or_province = location?.isoPrincipalSubdivision;
     const city = location?.city;
     const lat = location.latitude;
     const lon = location.longitude;
-    const organization = network?.organization;
-    const asn = carriers?.asn;
+    const organisation = network?.organisation;
+    const asn = network?.carriers[0]?.asn;
     console.log(city, state_or_province, country_name);
     const region = regionJoin(city, state_or_province, country_name);
-    const label = eliminatePrefixOrSuffix(organization, asn).join(" via ");
-    console.log(organization, asn, label);
+    const label = eliminatePrefixOrSuffix(organisation, asn).join(" via ");
+    console.log(network, network?.carriers[0], organisation, asn, label);
     return { region, label, lon, lat };
   }
 
