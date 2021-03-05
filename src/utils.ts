@@ -153,9 +153,7 @@ export const isValidIPAddress = (ip: string) => Boolean(parseIPAddress(ip));
 function toCIDRPair(ipv4: string): [bigint, number] {
   try {
     const [a, b] = ipv4.split('/');
-    console.log(ipv4, a, b);
     const ip = new ipAddress.Address4(a);
-    console.log(ip);
     const range = parseInt(b, 10);
     return [ipv4PartsToBigInt(ip.parsedAddress), range];
   } catch (e) {
@@ -164,6 +162,7 @@ function toCIDRPair(ipv4: string): [bigint, number] {
   }
 }
 
+// Ref: https://ipgeolocation.io/resources/bogon.html
 const bogonSpace = [
   '0.0.0.0/8',
   '10.0.0.0/8',
@@ -182,6 +181,7 @@ const bogonSpace = [
   '255.255.255.255/32',
 ].map(toCIDRPair);
 
+// Ref: https://en.wikipedia.org/wiki/List_of_assigned_/8_IPv4_address_blocks#List_of_assigned_/8_blocks_to_the_United_States_Department_of_Defense
 const dodSpace = [
   // "6.0.0.0/8",
   // "7.0.0.0/8",
@@ -198,10 +198,7 @@ const dodSpace = [
   // "215.0.0.0/8"
 ].map(toCIDRPair);
 
-console.log(bogonSpace);
-
 export function isInCIDR(ipv4: bigint, cidr: [bigint, number]): boolean {
-  console.log(ipv4, cidr);
   return (ipv4 ^ cidr[0]) >> BigInt(32 - cidr[1]) === BigInt(0);
 }
 
@@ -211,13 +208,8 @@ export function ipv4PartsToBigInt(ipv4Parts: string[]): bigint {
 
 export function isBogusIPAddress(ip: ipAddress.Address4 | ipAddress.Address6, dodAsBogus = false) {
   if (ip.v4) {
-    console.log('examing', ip);
     // const bits = ip.bigInteger(); // jsbn's BigInteger has nothing to with ECMA-262 bigint
     const bits = ipv4PartsToBigInt((ip as ipAddress.Address4).parsedAddress);
-    console.log(
-      bits,
-      bogonSpace.map((bogon) => isInCIDR(bits, bogon)).some((v) => v)
-    );
     if (bogonSpace.map((bogon) => isInCIDR(bits, bogon)).some((v) => v)) {
       return true;
     }
@@ -227,7 +219,6 @@ export function isBogusIPAddress(ip: ipAddress.Address4 | ipAddress.Address6, do
         return true;
       }
     }
-    console.log('not bogus');
     return false;
   } else {
     // TODO: Unimplemented
@@ -259,7 +250,6 @@ export async function batch_with_throttle<V>(
   return await Promise.all(
     tasks.map(async (task) => {
       await sema.acquire();
-      console.log(sema.nrWaiting());
       await lim();
       try {
         return await task();

@@ -2,5 +2,6 @@
 while true; do
   inotifywait -r -e modify,attrib,close_write,move,create,delete ./
   rsync -av ./ /var/lib/grafana/plugins/traceroute-map-panel/
-  systemctl restart grafana
+  systemctl stop grafana
+  systemctl start grafana
 done

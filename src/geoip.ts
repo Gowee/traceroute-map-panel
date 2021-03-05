@@ -199,7 +199,7 @@ export class IP2Geo {
       throw new Error(`BigDataCloud.com: ${d.description}`);
     }
     const { country, location, network } = d;
-    const country_name = country?.isoName;
+    const country_name = country?.isoName; // TODO: name / isoName pick shorter
     const state_or_province = location?.isoPrincipalSubdivision;
     const city = location?.city;
     const lat = location.latitude;

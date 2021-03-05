@@ -16,7 +16,9 @@ import {
   LatLngTuple,
   latLngBounds,
   LatLngBounds,
+  LCurve
 } from './react-leaflet-compat';
+import AntPath from 'react-leaflet-ant-path';
 
 import { TracerouteMapOptions, HopLabelType } from './options';
 import { IP2Geo, IPGeo } from './geoip';
@@ -31,6 +33,7 @@ import {
   parseIPAddress,
 } from './utils';
 import 'panel.css';
+import { pointsToBezierPath } from 'bezierCurve';
 
 interface Props extends PanelProps<TracerouteMapOptions> {}
 
@@ -232,6 +235,27 @@ export class TracerouteMapPanel extends Component<Props, State> {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="http://osm.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
         />
+                <AntPath
+          positions={[
+            'M',
+            [50.54136296522163, 28.520507812500004],
+
+            'C',
+            [52.214338608258224, 28.564453125000004],
+            [48.45835188280866, 33.57421875000001],
+            [50.680797145321655, 33.83789062500001],
+
+            'V',
+            [48.40003249610685],
+
+            'L',
+            [47.45839225859763, 31.201171875],
+            [48.40003249610685, 28.564453125000004],
+
+            'Z',
+          ]}
+          options={{ use: LCurve, color: 'red', fill: true }}
+        />
         <MarkerClusterGroup maxClusterRadius={options.mapClusterRadius} /*options={{ singleMarkerMode: true }}*/>
           {Array.from(data.entries()).map(([key, points]) => {
             const [host, dest] = key.split('|');
@@ -392,6 +416,13 @@ const RouteMarkers: React.FC<{
           </Popup>
         </Marker>
       ))}
+
+      <div style={{ all: 'revert' }}>
+        <AntPath
+          positions={pointsToBezierPath(points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple))}
+          options={{ use: LCurve, color }}
+        />
+      </div>
       <Polyline
         positions={points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple)}
         color={color}
