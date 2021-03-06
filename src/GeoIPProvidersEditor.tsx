@@ -1,7 +1,7 @@
 import React, { PureComponent, ChangeEvent } from 'react';
 import { Field, Button, TextArea, Select, Input, HorizontalGroup, Alert } from '@grafana/ui';
 import { StandardEditorProps, SelectableValue } from '@grafana/data';
-import {} from '@emotion/core'; // https://github.com/grafana/grafana/issues/26512
+import { } from '@emotion/core'; // https://github.com/grafana/grafana/issues/26512
 import { MDXProvider } from '@mdx-js/react';
 import { AnchorHTMLAttributes } from 'react';
 
