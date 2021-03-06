@@ -33,7 +33,8 @@ import {
   parseIPAddress,
 } from './utils';
 import 'panel.css';
-import { pointsToBezierPath } from 'bezierCurve';
+import { pointsToBezierPath1, pointsToBezierPath2, pointsToBezierPath3, symmetricAboutLine } from './spline';
+import { interpolate1 } from 'spline';
 
 interface Props extends PanelProps<TracerouteMapOptions> {}
 
@@ -363,6 +364,9 @@ const RouteMarkers: React.FC<{
   coordWrapper?: (coord: LatLngTuple) => LatLngTuple;
 }> = ({ host, dest, points, color, hopLabel, showSearchIcon, coordWrapper }) => {
   let wrapCoord = coordWrapper ?? ((coord: LatLngTuple) => coord);
+  const path = points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple);
+  const interpolatedPath = interpolate1(path);
+  console.log(path, interpolatedPath);
 
   return (
     <div data-host={host} data-dest={dest} data-points={points.length}>
@@ -417,16 +421,19 @@ const RouteMarkers: React.FC<{
         </Marker>
       ))}
 
-      <div style={{ all: 'revert' }}>
         <AntPath
-          positions={pointsToBezierPath(points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple))}
+          positions={pointsToBezierPath1(points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple))}
           options={{ use: LCurve, color }}
         />
-      </div>
-      <Polyline
+        <AntPath
+          positions={pointsToBezierPath2(points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple))}
+          options={{ use: LCurve, color: "blue" }}
+        />
+
+      {/* <Polyline
         positions={points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple)}
         color={color}
-      ></Polyline>
+      ></Polyline> */}
     </div>
   );
 };
