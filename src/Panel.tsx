@@ -16,7 +16,7 @@ import {
   LatLngTuple,
   latLngBounds,
   LatLngBounds,
-  LCurve
+  LCurve,
 } from './react-leaflet-compat';
 import AntPath from 'react-leaflet-ant-path';
 
@@ -34,33 +34,19 @@ import {
 } from './utils';
 import 'panel.css';
 import { pointsToBezierPath1, pointsToBezierPath2, pointsToBezierPath3, symmetricAboutLine } from './spline';
-import { interpolate1 } from 'spline';
+import { interpolate1 } from './spline';
+import { DataEntry, RoutePoint, dataFrameToEntries, entriesToRoutesAndBounds } from './data';
 
 interface Props extends PanelProps<TracerouteMapOptions> {}
 
 interface State {
-  data: Map<string, PathPoint[]>;
+  routes: Map<string, RoutePoint[]>;
   series: any;
   mapBounds: Map<string, LatLngTuple[]>;
   hiddenHosts: Set<string>;
   hostListExpanded: boolean;
   indicator?: 'loading' | 'error';
 }
-
-interface PathPoint {
-  lat: number;
-  lon: number;
-  region: string;
-  hops: Array<{
-    nth: number;
-    ip: string;
-    label: string;
-    rtt: number;
-    loss: number;
-  }>;
-}
-
-type DataEntry = [string, string, number, string, number, number];
 
 export class TracerouteMapPanel extends Component<Props, State> {
   mapRef = createRef<any>();
@@ -72,7 +58,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
     this.hiddenHostsStorage = new HiddenHostsStorage(this.props.id.toString());
     this.ip2geo = IP2Geo.fromProvider(this.props.options.geoIPProviders[this.props.options.geoIPProviders.active]);
     this.state = {
-      data: new Map(),
+      routes: new Map(),
       series: null,
       mapBounds: new Map(),
       hiddenHosts: this.hiddenHostsStorage.load(),
@@ -109,8 +95,8 @@ export class TracerouteMapPanel extends Component<Props, State> {
     console.log('loading');
     this.setState({ indicator: 'loading', series: this.props.data.series });
     try {
-      const { data, mapBounds } = await this.processData(this.props.data.series);
-      this.setState({ indicator: undefined, data, mapBounds });
+      const { routes: data, mapBounds } = await this.processData(this.props.data.series);
+      this.setState({ indicator: undefined, routes: data, mapBounds });
     } catch (e) {
       this.setState({ indicator: 'error' });
       console.error(e);
@@ -119,7 +105,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
 
   async processData(
     series: DataFrame[]
-  ): Promise<{ data: Map<string, PathPoint[]>; mapBounds: Map<string, LatLngTuple[]> }> {
+  ): Promise<{ routes: Map<string, RoutePoint[]>; mapBounds: Map<string, LatLngTuple[]> }> {
     if (series.length !== 1 || series[0].fields.length !== 7) {
       throw new Error('Data is empty or not formatted as table');
     }
@@ -171,10 +157,10 @@ export class TracerouteMapPanel extends Component<Props, State> {
     );
     console.log(entries, geos);
 
-    const routes = await entriesToRoutes(_.zip(entries, geos) as Array<[DataEntry, IPGeo]>);
+    const routesAndBounds = await entriesToRoutesAndBounds(_.zip(entries, geos) as Array<[DataEntry, IPGeo]>);
 
-    console.log(routes);
-    return routes;
+    console.log(routesAndBounds);
+    return routesAndBounds;
   }
 
   toggleHostItem(item: string) {
@@ -212,8 +198,8 @@ export class TracerouteMapPanel extends Component<Props, State> {
 
   render() {
     const { width, height, options } = this.props;
-    const data = this.state.data;
-    let palette = rainbowPalette(data.size, 0.618);
+    const routes = this.state.routes;
+    let palette = rainbowPalette(routes.size, 0.618);
     const effectiveBounds = this.getEffectiveBounds();
     return (
       <LMap
@@ -236,29 +222,8 @@ export class TracerouteMapPanel extends Component<Props, State> {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="http://osm.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
         />
-                <AntPath
-          positions={[
-            'M',
-            [50.54136296522163, 28.520507812500004],
-
-            'C',
-            [52.214338608258224, 28.564453125000004],
-            [48.45835188280866, 33.57421875000001],
-            [50.680797145321655, 33.83789062500001],
-
-            'V',
-            [48.40003249610685],
-
-            'L',
-            [47.45839225859763, 31.201171875],
-            [48.40003249610685, 28.564453125000004],
-
-            'Z',
-          ]}
-          options={{ use: LCurve, color: 'red', fill: true }}
-        />
         <MarkerClusterGroup maxClusterRadius={options.mapClusterRadius} /*options={{ singleMarkerMode: true }}*/>
-          {Array.from(data.entries()).map(([key, points]) => {
+          {Array.from(routes.entries()).map(([key, points]) => {
             const [host, dest] = key.split('|');
             return (
               !this.state.hiddenHosts.has(key) && (
@@ -287,7 +252,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
                 <i className="fa fa-compress" />
               </span>
               <ul className="host-list">
-                {Array.from(data.entries()).map(([key, points]) => {
+                {Array.from(routes.entries()).map(([key, points]) => {
                   const [host, dest] = key.split('|'); //.map(options.simplifyHostname ? simplyHostname : v => v);
                   const color = palette();
                   return (
@@ -357,7 +322,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
 const RouteMarkers: React.FC<{
   host: string;
   dest: string;
-  points: PathPoint[];
+  points: RoutePoint[];
   color: string;
   hopLabel: HopLabelType;
   showSearchIcon: boolean;
@@ -376,59 +341,25 @@ const RouteMarkers: React.FC<{
           position={wrapCoord([point.lat, point.lon])}
           className="point-marker"
         >
-          <Popup className="point-popup">
-            <div className="region-label">
-              <a href={`https://www.openstreetmap.org/#map=5/${point.lat}/${point.lon}`} target="_blank" rel="noopener">
-                {point.region}
-              </a>
-            </div>
-            <hr />
-            <ul className="hop-list">
-              {point.hops.map((hop) => (
-                <li
-                  className="hop-entry"
-                  key={hop.nth}
-                  title={`${hop.ip} (${hop.label ?? 'No network info available'}) RTT:${hop.rtt} Loss:${hop.loss}`}
-                >
-                  <span className="hop-nth">{hop.nth}.</span>{' '}
-                  <span className="hop-detail">
-                    {(hopLabel === 'ip' || hopLabel === 'ipAndLabel') && (
-                      <span className="hop-ip-wrapper">
-                        <span className="hop-ip">{hop.ip}</span>
-                        {showSearchIcon && (
-                          <a href={`https://bgp.he.net/ip/${hop.ip}`} target="_blank" rel="noopener">
-                            <Icon name="search" title="Search the IP in bgp.he.net" style={{ marginBottom: 'unset' }} />
-                          </a>
-                        )}
-                      </span>
-                    )}
-                    {(hopLabel === 'ipAndLabel' || hopLabel === 'label') && (
-                      <span className="hop-label">{hop.label}</span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <hr />
-            <div className="host-dest-label">
-              <span className="host-label">{host}</span>
-              <span className="host-arrow" style={{ color }}>
-                &nbsp; ➜ &nbsp;
-              </span>
-              <span className="dest-label">{dest}</span>
-            </div>
-          </Popup>
+          <PointPopup
+            host={host}
+            dest={dest}
+            point={point}
+            color={color}
+            hopLabel={hopLabel}
+            showSearchIcon={showSearchIcon}
+          />
         </Marker>
       ))}
 
-        <AntPath
-          positions={pointsToBezierPath1(points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple))}
-          options={{ use: LCurve, color }}
-        />
-        <AntPath
-          positions={pointsToBezierPath2(points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple))}
-          options={{ use: LCurve, color: "blue" }}
-        />
+      <AntPath
+        positions={pointsToBezierPath1(points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple))}
+        options={{ use: LCurve, color }}
+      />
+      <AntPath
+        positions={pointsToBezierPath2(points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple))}
+        options={{ use: LCurve, color: 'blue' }}
+      />
 
       {/* <Polyline
         positions={points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple)}
@@ -438,84 +369,54 @@ const RouteMarkers: React.FC<{
   );
 };
 
-/**
- * Process the raw data frame to produce entries of fields `['host', 'dest', 'hop', 'ip', 'rtt', 'loss']`.
- *
- * @param frame The raw data frame to be processed. It is expected to inlude the expected fields.
- * @return Entries of fields.
- */
-function dataFrameToEntries(frame: DataFrame): DataEntry[] {
-  // TODO: how to make this function generic?
-  let fields: any = {};
-  ['host', 'dest', 'hop', 'ip', 'rtt', 'loss'].forEach((item) => (fields[item] = null));
-  for (const field of frame.fields) {
-    if (fields.hasOwnProperty(field.name)) {
-      fields[field.name] = field.values.toArray();
-    } /* else {
-      console.log('Ignoring field: ' + field.name);
-    } */
-  }
-  if (Object.values(fields).includes(null)) {
-    throw new Error('Invalid data schema');
-  }
-  // Note: map(parseInt) does work as intended.
-  //  ref: https://medium.com/dailyjs/parseint-mystery-7c4368ef7b21
-  let entries = _.zip(
-    fields.host,
-    fields.dest,
-    fields.hop.map((v: string) => parseInt(v, 10)),
-    fields.ip,
-    fields.rtt.map((v: string) => parseFloat(v)),
-    fields.loss.map((v: string) => parseFloat(v))
-  ) as DataEntry[];
-  entries.sort((a, b) => a[2] - b[2]);
-  return entries;
-}
-
-/**
- * Process [host, dest, hop, ip, rtt, loss] entries to produce routes.
- * @param entries Entries.
- * @param options Panel options.
- */
-async function entriesToRoutes(
-  entries_with_geos: Array<[DataEntry, IPGeo]>
-): Promise<{ data: Map<string, PathPoint[]>; mapBounds: Map<string, LatLngTuple[]> }> {
-  // TODO: use catersian product to handle non-linear route paths
-
-  let data: Map<string, Map<string, PathPoint>> = new Map();
-  for (const [entry, geo] of entries_with_geos) {
-    const [host, dest, hop, ip, rtt, loss] = entry as DataEntry;
-    const groupKey = `${host}|${dest}`;
-    const { region, label, lat, lon } = geo as IPGeo;
-    if (typeof lat !== 'number' || typeof lon !== 'number') {
-      continue; // implying invalid or LAN IP
-    }
-    let group = data.get(groupKey);
-    if (group === undefined) {
-      group = new Map();
-      data.set(groupKey, group);
-    }
-    // If two points are too close, they are merged into a single point.
-    // Note: This has nothing to with mapClusterRadius.
-    const point_id = `${round(lat, 1)},${round(lon, 1)}`;
-    let point = group.get(point_id);
-    if (point === undefined) {
-      point = { lat, lon, region: region ?? 'unknown region', hops: [] };
-      group.set(point_id, point);
-    }
-    // Add a new hop record at this point.
-    point.hops.push({ nth: hop, ip, label: label ?? 'unknown network', rtt, loss });
-  }
-  let mapBounds: Map<string, LatLngTuple[]> = new Map();
-  for (const [key, points] of Array.from(data.entries())) {
-    const bound = latLngBounds(Array.from(points.values()).map((point) => [point.lat, point.lon]));
-    mapBounds.set(key, [
-      [bound.getSouth(), bound.getWest()],
-      [bound.getNorth(), bound.getEast()],
-    ]);
-  }
-  return {
-    data: new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())])),
-    mapBounds,
-  };
-}
+const PointPopup: React.FC<{
+  host: string;
+  dest: string;
+  point: RoutePoint;
+  color: string;
+  hopLabel: HopLabelType;
+  showSearchIcon: boolean;
+}> = ({ host, dest, point, color, hopLabel, showSearchIcon }) => {
+  return (
+    <Popup className="point-popup">
+      <div className="region-label">
+        <a href={`https://www.openstreetmap.org/#map=5/${point.lat}/${point.lon}`} target="_blank" rel="noopener">
+          {point.region}
+        </a>
+      </div>
+      <hr />
+      <ul className="hop-list">
+        {point.hops.map((hop) => (
+          <li
+            className="hop-entry"
+            key={hop.nth}
+            title={`${hop.ip} (${hop.label ?? 'No network info available'}) RTT:${hop.rtt} Loss:${hop.loss}`}
+          >
+            <span className="hop-nth">{hop.nth}.</span>{' '}
+            <span className="hop-detail">
+              {(hopLabel === 'ip' || hopLabel === 'ipAndLabel') && (
+                <span className="hop-ip-wrapper">
+                  <span className="hop-ip">{hop.ip}</span>
+                  {showSearchIcon && (
+                    <a href={`https://bgp.he.net/ip/${hop.ip}`} target="_blank" rel="noopener">
+                      <Icon name="search" title="Search the IP in bgp.he.net" style={{ marginBottom: 'unset' }} />
+                    </a>
+                  )}
+                </span>
+              )}
+              {(hopLabel === 'ipAndLabel' || hopLabel === 'label') && <span className="hop-label">{hop.label}</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <hr />
+      <div className="host-dest-label">
+        <span className="host-label">{host}</span>
+        <span className="host-arrow" style={{ color }}>
+          &nbsp; ➜ &nbsp;
+        </span>
+        <span className="dest-label">{dest}</span>
+      </div>
+    </Popup>
+  );
+};

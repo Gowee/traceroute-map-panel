@@ -12,7 +12,7 @@ export function symmetricAboutLine(pa: Point, line: [Point, Point]): Point {
     return [pa[0] + 2 * l, pa[1]];
   } else if (pb[1] === pc[1]) {
     const l = pb[1] - pa[1];
-    return [pa[0], pa[1] + 2 * l]
+    return [pa[0], pa[1] + 2 * l];
   }
   const k = (pb[1] - pc[1]) / (pb[0] - pc[0]);
 
@@ -28,7 +28,10 @@ export function angleOfThreePoints(point1: Point, point2: Point, point3: Point) 
   const vector1 = [point1[0] - point2[0], point1[1] - point2[1]];
   const vector2 = [point3[0] - point2[0], point3[1] - point2[1]];
   const dotproduct = vector1[0] * vector2[0] + vector1[1] * vector2[1];
-  const cosine = dotproduct / (Math.sqrt(Math.pow(vector1[0], 2) + Math.pow(vector1[1], 2)) * Math.sqrt(Math.pow(vector2[0], 2) + Math.pow(vector2[1], 2)));
+  const cosine =
+    dotproduct /
+    (Math.sqrt(Math.pow(vector1[0], 2) + Math.pow(vector1[1], 2)) *
+      Math.sqrt(Math.pow(vector2[0], 2) + Math.pow(vector2[1], 2)));
   return Math.acos(cosine);
 }
 
@@ -43,7 +46,7 @@ export function interpolate1(latLons: Array<[number, number]>): Array<[number, n
     const spLeft = symmetricAboutLine(latLons[i - 1], [latLons[i], latLons[j]]);
     console.log(latLons[i], angleLeft);
     if (2 * left < middle && angleLeft < Math.PI / 2) {
-      console.log("!");
+      console.log('!');
       points.push(spLeft);
     }
     points.push(latLons[i]);
@@ -54,7 +57,7 @@ export function interpolate1(latLons: Array<[number, number]>): Array<[number, n
       const spRight = symmetricAboutLine(latLons[j + 1], [latLons[i], latLons[j]]);
       if (2 * right < middle && angleRight < Math.PI / 2) {
         console.log(angleRight);
-        console.log("!!");
+        console.log('!!');
         points.push(spRight);
       }
     }
@@ -84,7 +87,7 @@ export function pointsToBezierPath1(latLons: Array<[number, number]>): any {
   // return bezierSpline.combinePoints(latLons, bezierSpline.getControlPoints(latLons));
 }
 
-export function pointsToBezierPath2(latLons: Array<[number, number]>, weightsFn: any=undefined): any {
+export function pointsToBezierPath2(latLons: Array<[number, number]>, weightsFn: any = undefined): any {
   if (latLons.length === 0) {
     return [];
   }
@@ -106,62 +109,60 @@ export function pointsToBezierPath3(latLons: Array<[number, number]>, smoothing 
   } else if (latLons.length <= 2) {
     return ['M', ...latLons];
   }
-  // Properties of a line 
+  // Properties of a line
   // I:  - pointA (array) [x,y]: coordinates
   //     - pointB (array) [x,y]: coordinates
   // O:  - (object) { length: l, angle: a }: properties of the line
   const line = (pointA: Point, pointB: Point) => {
-    const lengthX = pointB[0] - pointA[0]
-    const lengthY = pointB[1] - pointA[1]
+    const lengthX = pointB[0] - pointA[0];
+    const lengthY = pointB[1] - pointA[1];
     return {
       length: Math.sqrt(Math.pow(lengthX, 2) + Math.pow(lengthY, 2)),
-      angle: Math.atan2(lengthY, lengthX)
-    }
-  }
+      angle: Math.atan2(lengthY, lengthX),
+    };
+  };
 
-  // Position of a control point 
+  // Position of a control point
   // I:  - current (array) [x, y]: current point coordinates
   //     - previous (array) [x, y]: previous point coordinates
   //     - next (array) [x, y]: next point coordinates
   //     - reverse (boolean, optional): sets the direction
   // O:  - (array) [x,y]: a tuple of coordinates
   const controlPoint = (current: Point, previous: Point, next: Point, reverse?: boolean) => {
-
     // When 'current' is the first or last point of the array
     // 'previous' or 'next' don't exist.
     // Replace with 'current'
-    const p = previous || current
-    const n = next || current
+    const p = previous || current;
+    const n = next || current;
 
     // Properties of the opposed-line
-    const o = line(p, n)
+    const o = line(p, n);
 
     // If is end-control-point, add PI to the angle to go backward
-    const angle = o.angle + (reverse ? Math.PI : 0)
-    const length = o.length * smoothing
+    const angle = o.angle + (reverse ? Math.PI : 0);
+    const length = o.length * smoothing;
 
     // The control point position is relative to the current point
-    const x = current[0] + Math.cos(angle) * length
-    const y = current[1] + Math.sin(angle) * length
-    return [x, y]
-  }
+    const x = current[0] + Math.cos(angle) * length;
+    const y = current[1] + Math.sin(angle) * length;
+    return [x, y];
+  };
 
-  // Create the bezier curve command 
+  // Create the bezier curve command
   // I:  - point (array) [x,y]: current point coordinates
   //     - i (integer): index of 'point' in the array 'a'
   //     - a (array): complete array of points coordinates
   // O:  - (string) 'C x2,y2 x1,y1 x,y': SVG cubic bezier C command
   const bezierCommand = (point: Point, i: number, a: Point[]) => {
-
     // start control point
-    const cps = controlPoint(a[i - 1], a[i - 2], point)
+    const cps = controlPoint(a[i - 1], a[i - 2], point);
 
     // end control point
-    const cpe = controlPoint(point, a[i - 1], a[i + 1], true)
+    const cpe = controlPoint(point, a[i - 1], a[i + 1], true);
     return ['C', cps, cpe, point] as ['C', Point, Point, Point];
-  }
+  };
 
-  // Render the svg <path> element 
+  // Render the svg <path> element
   // I:  - points (array): points coordinates
   //     - command (function)
   //       I:  - point (array) [x,y]: current point coordinates
@@ -171,12 +172,8 @@ export function pointsToBezierPath3(latLons: Array<[number, number]>, smoothing 
   // O:  - (string): a Svg <path> element
   const curvePath = (points: Point[], command: (point: Point, i: number, a: Point[]) => ['C', Point, Point, Point]) => {
     // build the d attributes by looping over the points
-    return points.reduce<any>((acc, point, i, a) => i === 0
-      ? ['M', point]
-      : acc.concat(command(point, i, a))
-      , '')
-  }
-
+    return points.reduce<any>((acc, point, i, a) => (i === 0 ? ['M', point] : acc.concat(command(point, i, a))), '');
+  };
 
   return curvePath(latLons, bezierCommand);
 }

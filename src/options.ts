@@ -1,6 +1,5 @@
 import { PanelOptionsEditorBuilder } from '@grafana/data';
 
-import { IPSB, IPInfo, CustomAPI, CustomFunction, GeoIPProviderKind } from './geoip';
 import { GeoIPProvidersEditor, GeoIPProvidersOption } from './GeoIPProvidersEditor';
 
 export type HopLabelType = 'label' | 'ip' | 'ipAndLabel';
@@ -18,6 +17,7 @@ export interface TracerouteMapOptions {
   hopLabelType: HopLabelType;
   showSearchIconInHopLabel: boolean;
   bogonFilteringSpace: undefined | 'bogon' | 'extendedBogon';
+  pathSpline: undefined | 'spline' | 'animatedSpline';
 }
 
 export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<TracerouteMapOptions>) =>
@@ -78,6 +78,19 @@ export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<Traceroute
       name: 'Show Search Icon for IP',
       description: 'Show a search button for every IP address in hop labels',
       defaultValue: true,
+    })
+    .addRadio({
+      path: 'pathSpline',
+      name: 'Path Line Type 🆕',
+      description: 'Apply polyline/spline to the route path',
+      defaultValue: undefined as any,
+      settings: {
+        options: [
+          { label: 'Polyline', value: undefined, description: 'Plain polyline' },
+          { label: 'Spline', value: 'spline', description: 'Smoothed spline' },
+          { label: 'Animated Spline', value: 'animatedSpline', description: 'Smoothed spline with flux animation' },
+        ],
+      },
     })
     .addCustomEditor({
       id: 'geoIPProviders',
