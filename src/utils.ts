@@ -1,7 +1,7 @@
 import { Sema as Semaphore, RateLimit } from 'async-sema';
 import ipAddress from 'ip-address';
 
-import { Cache as GeoIPCache } from './geoip';
+import { Cache as GeoIPCache } from './geoip/api';
 
 export const PACKAGE = require('../package.json');
 

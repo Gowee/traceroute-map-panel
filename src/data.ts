@@ -3,7 +3,7 @@ import { DataFrame } from '@grafana/data';
 import { latLngBounds, LatLngTuple } from './react-leaflet-compat';
 
 import { round } from './utils';
-import { IPGeo } from './geoip';
+import { IPGeo } from './geoip/api';
 
 export type DataEntry = [string, string, number, string, number, number];
 

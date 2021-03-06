@@ -1,6 +1,6 @@
 /* eslint-disable */
 
-import { PACKAGE, isValidIPAddress, regionJoin, orgJoin, eliminatePrefixOrSuffix } from './utils';
+import { PACKAGE, isValidIPAddress, regionJoin, orgJoin, eliminatePrefixOrSuffix } from '../utils';
 
 // candidante cache providers:
 // SessionStorage

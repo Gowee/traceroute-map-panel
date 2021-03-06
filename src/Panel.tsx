@@ -21,7 +21,7 @@ import {
 import AntPath from 'react-leaflet-ant-path';
 
 import { TracerouteMapOptions, HopLabelType } from './options';
-import { IP2Geo, IPGeo } from './geoip';
+import { IP2Geo, IPGeo } from './geoip/api';
 import {
   rainbowPalette,
   round,

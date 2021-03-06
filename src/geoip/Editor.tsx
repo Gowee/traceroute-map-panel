@@ -1,7 +1,7 @@
 import React, { PureComponent, ChangeEvent } from 'react';
 import { Field, Button, TextArea, Select, Input, HorizontalGroup, Alert } from '@grafana/ui';
 import { StandardEditorProps, SelectableValue } from '@grafana/data';
-import { } from '@emotion/core'; // https://github.com/grafana/grafana/issues/26512
+import {} from '@emotion/core'; // https://github.com/grafana/grafana/issues/26512
 import { MDXProvider } from '@mdx-js/react';
 import { AnchorHTMLAttributes } from 'react';
 
@@ -16,7 +16,7 @@ import {
   CustomAPINote,
   CustomFunctionNote,
 } from './text';
-import { TracerouteMapOptions } from './options';
+import { TracerouteMapOptions } from '../options';
 import {
   GeoIPProviderKind,
   GeoIPProvider,
@@ -30,8 +30,8 @@ import {
   GeoIPProviderKinds,
   IPGeolocation,
   BigDataCloud,
-} from './geoip';
-import { CodeSnippets, timeout } from './utils';
+} from './api';
+import { CodeSnippets, timeout } from '../utils';
 
 const TEST_IP = '1.2.4.8';
 
@@ -57,7 +57,7 @@ interface State {
   test: Test;
 }
 
-export class GeoIPProvidersEditor extends PureComponent<Props, State> {
+export default class GeoIPProvidersEditor extends PureComponent<Props, State> {
   static defaultValue: GeoIPProvidersOption = {
     active: 'ipsb',
     ...(Object.fromEntries(GeoIPProviderKinds.map((p) => [p, { kind: p }])) as any),

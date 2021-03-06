@@ -1,6 +1,6 @@
 import { PanelOptionsEditorBuilder } from '@grafana/data';
 
-import { GeoIPProvidersEditor, GeoIPProvidersOption } from './GeoIPProvidersEditor';
+import GeoIPProvidersEditor, { GeoIPProvidersOption } from './geoip/Editor';
 
 export type HopLabelType = 'label' | 'ip' | 'ipAndLabel';
 
