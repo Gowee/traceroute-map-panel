@@ -81,8 +81,8 @@ export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<Traceroute
     })
     .addRadio({
       path: 'pathSpline',
-      name: 'Path Line Type 🆕',
-      description: 'Apply polyline/spline to the route path',
+      name: 'Route Line Type 🆕',
+      description: 'Apply polyline/spline to traceroute paths',
       defaultValue: undefined as any,
       settings: {
         options: [

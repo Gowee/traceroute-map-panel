@@ -1,41 +1,40 @@
 /* eslint-disable react/jsx-no-target-blank */
 
-import React, { Component, createRef, MouseEvent } from 'react';
+import React, { Component, createRef, MouseEvent, useState } from 'react';
 import { PanelProps, LoadingState, DataFrame } from '@grafana/data';
 import { Icon, Button, Tooltip, Spinner } from '@grafana/ui';
 // import { keys } from 'ts-transformer-keys';
 import _ from 'lodash';
 import {
   Map as LMap,
-  Marker,
-  Popup,
   TileLayer,
   Control,
   MarkerClusterGroup,
-  Polyline,
   LatLngTuple,
   latLngBounds,
   LatLngBounds,
-  LCurve,
 } from './react-leaflet-compat';
-import AntPath from 'react-leaflet-ant-path';
 
-import { TracerouteMapOptions, HopLabelType } from './options';
+import { TracerouteMapOptions } from './options';
 import { IP2Geo, IPGeo } from './geoip/api';
 import {
   rainbowPalette,
-  round,
   HiddenHostsStorage,
   simplyHostname,
   isBogusIPAddress,
-  resolveHostname,
   makeThrottler,
   parseIPAddress,
 } from './utils';
 import 'panel.css';
-import { pointsToBezierPath1, pointsToBezierPath2, pointsToBezierPath3, symmetricAboutLine } from './spline';
-import { interpolate1 } from './spline';
-import { DataEntry, RoutePoint, dataFrameToEntries, entriesToRoutesAndBounds } from './data';
+import {
+  DataEntry,
+  RoutePoint,
+  dataFrameToEntries,
+  entriesToRoutesAndBounds,
+  prependZerothHopsBySrcHosts,
+} from './data';
+import HostTray from './components/HostTray';
+import RoutePath from './components/RoutePath';
 
 interface Props extends PanelProps<TracerouteMapOptions> {}
 
@@ -51,12 +50,12 @@ interface State {
 export class TracerouteMapPanel extends Component<Props, State> {
   mapRef = createRef<any>();
   hiddenHostsStorage: HiddenHostsStorage;
-  ip2geo: (ip: string) => Promise<IPGeo>;
+  // ip2geo: (ip: string) => Promise<IPGeo>;
 
   constructor(props: Props) {
     super(props);
     this.hiddenHostsStorage = new HiddenHostsStorage(this.props.id.toString());
-    this.ip2geo = IP2Geo.fromProvider(this.props.options.geoIPProviders[this.props.options.geoIPProviders.active]);
+    // this.ip2geo = IP2Geo.fromProvider(this.props.options.geoIPProviders[this.props.options.geoIPProviders.active]);
     this.state = {
       routes: new Map(),
       series: null,
@@ -71,13 +70,13 @@ export class TracerouteMapPanel extends Component<Props, State> {
   }
 
   componentDidUpdate(prevProps: Props): void {
-    if (
-      prevProps.options.geoIPProviders[prevProps.options.geoIPProviders.active] !==
-      this.props.options.geoIPProviders[this.props.options.geoIPProviders.active]
-    ) {
-      // won't trigger processData
-      this.ip2geo = IP2Geo.fromProvider(this.props.options.geoIPProviders[this.props.options.geoIPProviders.active]);
-    }
+    // if (
+    //   prevProps.options.geoIPProviders[prevProps.options.geoIPProviders.active] !==
+    //   this.props.options.geoIPProviders[this.props.options.geoIPProviders.active]
+    // ) {
+    //   // won't trigger processData
+    //   this.ip2geo = IP2Geo.fromProvider(this.props.options.geoIPProviders[this.props.options.geoIPProviders.active]);
+    // }
     if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
       // https://github.com/PaulLeCam/react-leaflet/issues/340#issuecomment-527939630
       this.mapRef.current.leafletElement.invalidateSize();
@@ -110,56 +109,32 @@ export class TracerouteMapPanel extends Component<Props, State> {
       throw new Error('Data is empty or not formatted as table');
     }
     const options = this.props.options;
-    const throttler = options.parallelizeGeoIP
+
+    const geoIPThrottler = options.parallelizeGeoIP
       ? makeThrottler<string, unknown[], IPGeo>(options.concurrentRequests, options.requestsPerSecond)
       : undefined;
-
-    const ip2geo = IP2Geo.fromProvider(options.geoIPProviders[options.geoIPProviders.active], throttler);
+    const ip2geo = IP2Geo.fromProvider(options.geoIPProviders[options.geoIPProviders.active], geoIPThrottler);
 
     let entries = dataFrameToEntries(series[0]);
 
     if (options.srcHostAsZerothHop) {
-      // No option for parallelization of DoH resolution so far. Just borrow it from GeoIP.
-      let zerothHopEntries: DataEntry[] = [];
-      await Promise.all(
-        Array.from(new Set(entries.map((entry) => `${entry[0]}|${entry[1]}`)).values()).map(async (hostDest) => {
-          const [host, dest] = hostDest.split('|');
-          const address = await resolveHostname(host);
-          if (address) {
-            zerothHopEntries.push([host, dest, 0, address, 0, 0]);
-          }
-        })
-      );
-      // Closer hops come first.
-      entries = zerothHopEntries.concat(entries);
+      // No option of parallelization for DoH resolution so far. Just hardcode for now.
+      const doHThrottler = makeThrottler<string, unknown[], string | null>(10, 100);
+      entries = await prependZerothHopsBySrcHosts(entries, doHThrottler);
     }
 
-    let bogonFilterer = (_: string) => false;
-    console.log(options.bogonFilteringSpace, Boolean(options.bogonFilteringSpace));
+    let bogonFilterer = (_: string) => false; // true for bogon
     if (options.bogonFilteringSpace) {
-      console.log('L418');
       bogonFilterer = (ip: string) => {
         const address = parseIPAddress(ip);
-        console.log(address);
         return address ? isBogusIPAddress(address, options.bogonFilteringSpace === 'extendedBogon') : true;
       };
     }
-
-    console.log(bogonFilterer);
-
     entries = entries.filter((entry) => !bogonFilterer(entry[3] /* hop IP */));
 
-    const geos = await Promise.all(
-      entries.map(async (entry) => {
-        const ip = entry[3];
-        return await ip2geo(ip);
-      })
-    );
-    console.log(entries, geos);
+    const geos = await Promise.all(entries.map(async (entry) => await ip2geo(entry[3] /* hop IP */)));
 
     const routesAndBounds = await entriesToRoutesAndBounds(_.zip(entries, geos) as Array<[DataEntry, IPGeo]>);
-
-    console.log(routesAndBounds);
     return routesAndBounds;
   }
 
@@ -182,11 +157,11 @@ export class TracerouteMapPanel extends Component<Props, State> {
     return tuples.length ? latLngBounds(tuples) : undefined;
   }
 
-  toggleHostList() {
-    this.setState((prevState) => {
-      return { hostListExpanded: !prevState.hostListExpanded };
-    });
-  }
+  // toggleHostList() {
+  //   this.setState((prevState) => {
+  //     return { hostListExpanded: !prevState.hostListExpanded };
+  //   });
+  // }
 
   wrapCoord(coord: LatLngTuple): LatLngTuple {
     let [lat, lon] = coord;
@@ -201,6 +176,8 @@ export class TracerouteMapPanel extends Component<Props, State> {
     const routes = this.state.routes;
     let palette = rainbowPalette(routes.size, 0.618);
     const effectiveBounds = this.getEffectiveBounds();
+    const hostnameProcessor = this.props.options.simplifyHostname ? simplyHostname : (v: string) => v;
+
     return (
       <LMap
         key={this.state.series}
@@ -227,7 +204,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
             const [host, dest] = key.split('|');
             return (
               !this.state.hiddenHosts.has(key) && (
-                <RouteMarkers
+                <RoutePath
                   key={key}
                   dest={dest}
                   host={host}
@@ -242,181 +219,53 @@ export class TracerouteMapPanel extends Component<Props, State> {
           })}
         </MarkerClusterGroup>
         <Control position="bottomleft">
-          {this.state.hostListExpanded ? (
-            <>
-              <span
-                className="host-list-toggler host-list-collapse"
-                title="Collapse hosts list"
-                onClick={() => this.toggleHostList()}
-              >
-                <i className="fa fa-compress" />
-              </span>
-              <ul className="host-list">
-                {Array.from(routes.entries()).map(([key, points]) => {
-                  const [host, dest] = key.split('|'); //.map(options.simplifyHostname ? simplyHostname : v => v);
-                  const color = palette();
-                  return (
-                    <li key={`${host}|${dest}`} className="host-item" onClick={() => this.toggleHostItem(key)}>
-                      <span className="host-label" title={host}>
-                        {options.simplifyHostname ? simplyHostname(host) : host}
-                      </span>
-                      <span className="host-arrow" style={{ color: this.state.hiddenHosts.has(key) ? 'grey' : color }}>
-                        <Icon name="arrow-right" />
-                      </span>
-                      <span className="dest-label" title={dest}>
-                        {options.simplifyHostname ? simplyHostname(dest) : dest}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          ) : (
-            <span
-              className="host-list-toggler host-list-expand"
-              title="Expand hosts list"
-              onClick={() => this.toggleHostList()}
-            >
-              <i className="fa fa-expand" />
-            </span>
-          )}
+          <HostTray
+            expanded={true}
+            routes={this.state.routes}
+            hiddenHosts={this.state.hiddenHosts}
+            itemToggler={this.toggleHostItem}
+            palette={palette}
+            hostnameProcessor={hostnameProcessor}
+          />
         </Control>
-        <Control position="topright">
-          {(() => {
-            switch (this.state.indicator) {
-              case undefined:
-                return (
-                  <Button variant="primary" size="md" onClick={this.handleFit} title="Fit the map view to all points">
-                    {/* FIX: @grafana/ui Button keeps active state */}
-                    Fit
-                  </Button>
-                );
-              case 'loading':
-                return (
-                  <span className="map-indicator loading">
-                    {/* <Spinner /> */}
-                    <i className="fa fa-spinner fa-spin" />
-                    Loading
-                  </span>
-                );
-              case 'error':
-                return (
-                  <Tooltip content="The Debugging Console shows the detailed error." theme="error">
-                    <span className="map-indicator error" title="">
-                      <i className="fa fa-warning" />
-                      Error processing data
-                    </span>
-                  </Tooltip>
-                );
-            }
-          })()}
-        </Control>
+        <TopRightControl statusIndicator={this.state.indicator} handleFit={this.handleFit} />
       </LMap>
     );
   }
 }
 
-/**
- * Leaflet Markers and Polyline for a single route, corresponding to one host->dest pair
- */
-const RouteMarkers: React.FC<{
-  host: string;
-  dest: string;
-  points: RoutePoint[];
-  color: string;
-  hopLabel: HopLabelType;
-  showSearchIcon: boolean;
-  coordWrapper?: (coord: LatLngTuple) => LatLngTuple;
-}> = ({ host, dest, points, color, hopLabel, showSearchIcon, coordWrapper }) => {
-  let wrapCoord = coordWrapper ?? ((coord: LatLngTuple) => coord);
-  const path = points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple);
-  const interpolatedPath = interpolate1(path);
-  console.log(path, interpolatedPath);
-
-  return (
-    <div data-host={host} data-dest={dest} data-points={points.length}>
-      {points.map((point) => (
-        <Marker
-          key={`${round(point.lat, 1)},${round(point.lon, 1)}`}
-          position={wrapCoord([point.lat, point.lon])}
-          className="point-marker"
-        >
-          <PointPopup
-            host={host}
-            dest={dest}
-            point={point}
-            color={color}
-            hopLabel={hopLabel}
-            showSearchIcon={showSearchIcon}
-          />
-        </Marker>
-      ))}
-
-      <AntPath
-        positions={pointsToBezierPath1(points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple))}
-        options={{ use: LCurve, color }}
-      />
-      <AntPath
-        positions={pointsToBezierPath2(points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple))}
-        options={{ use: LCurve, color: 'blue' }}
-      />
-
-      {/* <Polyline
-        positions={points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple)}
-        color={color}
-      ></Polyline> */}
-    </div>
-  );
-};
-
-const PointPopup: React.FC<{
-  host: string;
-  dest: string;
-  point: RoutePoint;
-  color: string;
-  hopLabel: HopLabelType;
-  showSearchIcon: boolean;
-}> = ({ host, dest, point, color, hopLabel, showSearchIcon }) => {
-  return (
-    <Popup className="point-popup">
-      <div className="region-label">
-        <a href={`https://www.openstreetmap.org/#map=5/${point.lat}/${point.lon}`} target="_blank" rel="noopener">
-          {point.region}
-        </a>
-      </div>
-      <hr />
-      <ul className="hop-list">
-        {point.hops.map((hop) => (
-          <li
-            className="hop-entry"
-            key={hop.nth}
-            title={`${hop.ip} (${hop.label ?? 'No network info available'}) RTT:${hop.rtt} Loss:${hop.loss}`}
-          >
-            <span className="hop-nth">{hop.nth}.</span>{' '}
-            <span className="hop-detail">
-              {(hopLabel === 'ip' || hopLabel === 'ipAndLabel') && (
-                <span className="hop-ip-wrapper">
-                  <span className="hop-ip">{hop.ip}</span>
-                  {showSearchIcon && (
-                    <a href={`https://bgp.he.net/ip/${hop.ip}`} target="_blank" rel="noopener">
-                      <Icon name="search" title="Search the IP in bgp.he.net" style={{ marginBottom: 'unset' }} />
-                    </a>
-                  )}
-                </span>
-              )}
-              {(hopLabel === 'ipAndLabel' || hopLabel === 'label') && <span className="hop-label">{hop.label}</span>}
+const TopRightControl: React.FC<{ statusIndicator?: 'loading' | 'error'; handleFit: (event: MouseEvent) => void }> = ({
+  statusIndicator,
+  handleFit,
+}) => (
+  <Control position="topright">
+    {(() => {
+      switch (statusIndicator) {
+        case undefined:
+          return (
+            <Button variant="primary" size="md" onClick={handleFit} title="Fit the map view to all points">
+              {/* FIX: @grafana/ui Button keeps active state */}
+              Fit
+            </Button>
+          );
+        case 'loading':
+          return (
+            <span className="map-indicator loading">
+              {/* <Spinner /> */}
+              <i className="fa fa-spinner fa-spin" />
+              Loading
             </span>
-          </li>
-        ))}
-      </ul>
-      <hr />
-      <div className="host-dest-label">
-        <span className="host-label">{host}</span>
-        <span className="host-arrow" style={{ color }}>
-          &nbsp; ➜ &nbsp;
-        </span>
-        <span className="dest-label">{dest}</span>
-      </div>
-    </Popup>
-  );
-};
+          );
+        case 'error':
+          return (
+            <Tooltip content="The Debugging Console shows the detailed error." theme="error">
+              <span className="map-indicator error" title="">
+                <i className="fa fa-warning" />
+                Error processing data
+              </span>
+            </Tooltip>
+          );
+      }
+    })()}
+  </Control>
+);

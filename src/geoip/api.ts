@@ -1,4 +1,7 @@
 /* eslint-disable */
+// No idea. But the following gives: error  Definition for rule '@typescript-eslint/<...>' was not found. 
+///* eslint-disable @typescript-eslint/interface-name-prefix */
+///* eslint-disable @typescript-eslint/naming-convention */
 
 import { PACKAGE, isValidIPAddress, regionJoin, orgJoin, eliminatePrefixOrSuffix } from '../utils';
 
@@ -7,9 +10,26 @@ import { PACKAGE, isValidIPAddress, regionJoin, orgJoin, eliminatePrefixOrSuffix
 // LocalStorage
 // IndexDB
 
-export type GeoIPProvider = IPInfo | IPSB | IPDataCo | IPGeolocation | BigDataCloud | IPAPICo | CustomAPI | CustomFunction;
+export type GeoIPProvider =
+  | IPInfo
+  | IPSB
+  | IPDataCo
+  | IPGeolocation
+  | BigDataCloud
+  | IPAPICo
+  | CustomAPI
+  | CustomFunction;
 // Ref: https://stackoverflow.com/questions/45251664/typescript-derive-union-type-from-tuple-array-values
-export const GeoIPProviderKinds = ['ipinfo', 'ipsb', 'ipdataco', 'ipgeolocation', 'bigdatacloud', 'ipapico', 'custom-api', 'custom-function'] as const;
+export const GeoIPProviderKinds = [
+  'ipinfo',
+  'ipsb',
+  'ipdataco',
+  'ipgeolocation',
+  'bigdatacloud',
+  'ipapico',
+  'custom-api',
+  'custom-function',
+] as const;
 export type GeoIPProviderKind = typeof GeoIPProviderKinds[number];
 
 // eslint-disable-next-line @typescript-eslint/interface-name-prefix
@@ -44,7 +64,7 @@ export interface BigDataCloud {
 // eslint-disable-next-line @typescript-eslint/interface-name-prefix
 export interface IPAPICo {
   kind: 'ipapico';
-  key?: string
+  key?: string;
 }
 
 export interface CustomAPI {
@@ -69,7 +89,8 @@ export interface IPGeo {
 export const Cache = {
   get: (key: string) => JSON.parse(sessionStorage.getItem(`${PACKAGE.name}-geoip-${key}`) ?? 'null') ?? undefined,
   // Note: JSON.stringify/parse does not work for `undefined`, so always convert `undefined` to `null`.
-  set: (key: string, value: Object | null) => sessionStorage.setItem(`${PACKAGE.name}-geoip-${key}`, JSON.stringify(value ?? 'null')),
+  set: (key: string, value: Object | null) =>
+    sessionStorage.setItem(`${PACKAGE.name}-geoip-${key}`, JSON.stringify(value ?? 'null')),
   clear: (indiscriminate = false) => {
     let count = 0;
     if (indiscriminate) {
@@ -90,7 +111,10 @@ export const Cache = {
 export class IP2Geo {
   defaultProvider: GeoIPProvider = { kind: 'ipsb' } as IPSB;
 
-  static fromProvider(provider: GeoIPProvider, throttler?: (fn: (ip: string) => Promise<IPGeo>) => (ip: string) => Promise<IPGeo>) {
+  static fromProvider(
+    provider: GeoIPProvider,
+    throttler?: (fn: (ip: string) => Promise<IPGeo>) => (ip: string) => Promise<IPGeo>
+  ) {
     let fn: (ip: string) => Promise<IPGeo>;
     switch (provider.kind) {
       case 'ipinfo':
@@ -176,12 +200,14 @@ export class IP2Geo {
     }
     const { country_name, region, city, latitude, longitude, asn: network } = d;
     const regionFull = regionJoin(country_name, region, city);
-    const label = [network?.asn, network?.name].filter((value) => value).join(" ");
+    const label = [network?.asn, network?.name].filter((value) => value).join(' ');
     return { region: regionFull, label: label, lon: longitude, lat: latitude };
   }
 
   static async IPGeolocation(ip: string, key: string): Promise<IPGeo> {
-    const r = await fetch(`https://api.ipgeolocation.io/ipgeo?apiKey=${key}&ip=${ip}`, { headers: { Accept: 'application/json' } });
+    const r = await fetch(`https://api.ipgeolocation.io/ipgeo?apiKey=${key}&ip=${ip}`, {
+      headers: { Accept: 'application/json' },
+    });
     const d = await r.json();
     if (d.ip === undefined) {
       throw new Error(`IPGeolocation.io: ${d.message}`);
@@ -193,7 +219,9 @@ export class IP2Geo {
   }
 
   static async BigDataCloud(ip: string, key: string): Promise<IPGeo> {
-    const r = await fetch(`https://api.bigdatacloud.net/data/ip-geolocation?key=${key}&ip=${ip}`, { headers: { Accept: 'application/json' } });
+    const r = await fetch(`https://api.bigdatacloud.net/data/ip-geolocation?key=${key}&ip=${ip}`, {
+      headers: { Accept: 'application/json' },
+    });
     const d = await r.json();
     if (d.ip === undefined) {
       throw new Error(`BigDataCloud.com: ${d.description}`);
@@ -208,7 +236,7 @@ export class IP2Geo {
     const asn = network?.carriers[0]?.asn;
     console.log(city, state_or_province, country_name);
     const region = regionJoin(city, state_or_province, country_name);
-    const label = eliminatePrefixOrSuffix(organisation, asn).join(" via ");
+    const label = eliminatePrefixOrSuffix(organisation, asn).join(' via ');
     console.log(network, network?.carriers[0], organisation, asn, label);
     return { region, label, lon, lat };
   }
@@ -221,7 +249,7 @@ export class IP2Geo {
     }
     const { country_name, region, city, latitude, longitude, asn, org } = d;
     const regionFull = regionJoin(city, region, country_name);
-    const label = [asn, org].filter((value) => value).join(" ");
+    const label = [asn, org].filter((value) => value).join(' ');
     return { region: regionFull, label: label, lon: longitude, lat: latitude };
   }
 

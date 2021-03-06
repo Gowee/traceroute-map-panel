@@ -7,7 +7,7 @@
     list-style: none;
 }
 
-.host-list {
+.host-tray {
     list-style: none;
 }
 
@@ -29,14 +29,14 @@
     color: rgba(0, 0, 0, 1.0);
 }
 
-.host-list .host-arrow {
+.host-tray .host-arrow {
     margin-left: 0.5em;
     margin-right: 0.5em;
     position: relative;
     top: 2px;
 }
 
-.host-list .host-label, .host-list .dest-label {
+.host-tray .host-label, .host-tray .dest-label {
     display: inline-block;
     width: 8em;
     overflow: hidden;
@@ -44,20 +44,20 @@
     text-align: center;
 }
 
-.host-list-toggler {
+.host-tray-toggler {
     cursor: pointer;
 }
 
-.leaflet-control:hover .host-list-togger {
+.leaflet-control:hover .host-tray-togger {
     transform: scale(1.25);
 }
 
-.leaflet-control:hover .host-list-collapse, .host-list-expand {
+.leaflet-control:hover .host-tray-collapse, .host-tray-expand {
     /* darkblue */
     color: rgba(0, 0, 139, 0.9);
 }
 
-.host-list-collapse {
+.host-tray-collapse {
     position: absolute;
     top: -1em;
     right: -1em;

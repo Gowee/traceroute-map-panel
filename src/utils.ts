@@ -70,7 +70,8 @@ export function round(number: number, ndigits: number): number {
 export class HiddenHostsStorage {
   ENTRYID: string;
 
-  constructor(panelID: string, packageID = PACKAGE.name) {
+  constructor(packageID = PACKAGE.name) {
+    const panelID = 'common'; // disable standalone cache per panel for now
     this.ENTRYID = `${packageID}-${panelID}-hidden-hosts`;
   }
 
@@ -260,11 +261,11 @@ export async function batch_with_throttle<V>(
   );
 }
 
-interface ThrottableFn<P0, PN extends any[], R> {
+export interface ThrottableFn<P0, PN extends any[], R> {
   (arg0: P0, ...args: PN): Promise<R>;
 }
 
-interface Throttler<P0, PN extends any[], R> {
+export interface Throttler<P0, PN extends any[], R> {
   (fn: ThrottableFn<P0, PN, R>): ThrottableFn<P0, PN, R>;
 }
 

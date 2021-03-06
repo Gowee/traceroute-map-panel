@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { DataFrame } from '@grafana/data';
 import { latLngBounds, LatLngTuple } from './react-leaflet-compat';
 
-import { round } from './utils';
+import { round, Throttler, resolveHostname } from './utils';
 import { IPGeo } from './geoip/api';
 
 export type DataEntry = [string, string, number, string, number, number];
@@ -100,4 +100,23 @@ export async function entriesToRoutesAndBounds(
     routes: new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())])),
     mapBounds,
   };
+}
+
+export async function prependZerothHopsBySrcHosts(
+  entries: DataEntry[],
+  throttler?: Throttler<string, any[], string | null>
+): Promise<DataEntry[]> {
+  let zerothHopEntries: DataEntry[] = [];
+  const resolve = throttler ? throttler(resolveHostname) : resolveHostname;
+  await Promise.all(
+    Array.from(new Set(entries.map((entry) => `${entry[0]}|${entry[1]}`)).values()).map(async (hostDest) => {
+      const [host, dest] = hostDest.split('|');
+      const address = await resolve(host);
+      if (address) {
+        zerothHopEntries.push([host, dest, 0, address, 0, 0]);
+      }
+    })
+  );
+  // Closer hops come first.
+  return zerothHopEntries.concat(entries);
 }
