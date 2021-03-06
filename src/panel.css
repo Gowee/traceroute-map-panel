@@ -3,11 +3,15 @@
 }
  */
 
+.host-tray {
+    line-height: 1; /* for toggler positioning */
+}
+
 .hop-list {
     list-style: none;
 }
 
-.host-tray {
+.host-list {
     list-style: none;
 }
 
@@ -20,6 +24,7 @@
     color: rgba(0, 0, 0, 0.8);
     display: flex;
     justify-content: space-between;
+    transition: 0.3s;
 }
 
 .host-item:hover {
@@ -29,14 +34,14 @@
     color: rgba(0, 0, 0, 1.0);
 }
 
-.host-tray .host-arrow {
+.host-list .host-arrow {
     margin-left: 0.5em;
     margin-right: 0.5em;
     position: relative;
     top: 2px;
 }
 
-.host-tray .host-label, .host-tray .dest-label {
+.host-list .host-label, .host-list .dest-label {
     display: inline-block;
     width: 8em;
     overflow: hidden;
@@ -44,23 +49,31 @@
     text-align: center;
 }
 
-.host-tray-toggler {
+.host-list-toggler {
     cursor: pointer;
+    transition: 0.25s;
 }
 
-.leaflet-control:hover .host-tray-togger {
-    transform: scale(1.25);
+.host-tray:hover .host-list-toggler {
+    color: white;
 }
 
-.leaflet-control:hover .host-tray-collapse, .host-tray-expand {
+.host-tray:hover .host-list-collapse {
+    transform: scale(1.5);
+    top: -1.05em;
+    right: -1.05em;
+}
+
+.host-list-expand {
+    font-size: 1.5em;
     /* darkblue */
     color: rgba(0, 0, 139, 0.9);
 }
 
-.host-tray-collapse {
+.host-list-collapse {
     position: absolute;
-    top: -1em;
-    right: -1em;
+    top: -0.85em;
+    right: -0.85em;
     /* aliceblue */
     color: rgba(240, 248, 255, 0.618);
 }
