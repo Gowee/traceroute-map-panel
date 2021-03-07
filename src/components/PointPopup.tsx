@@ -6,14 +6,23 @@ import { Icon } from '@grafana/ui';
 import { RoutePoint } from '../data';
 import { HopLabelType } from '../options';
 
-const PointPopup: React.FC<{
+export interface GenericPointPopupProps {
   host: string;
   dest: string;
   point: RoutePoint;
   color: string;
+}
+
+export interface PointPopupProps extends GenericPointPopupProps {
+  // host: string;
+  // dest: string;
+  // point: RoutePoint;
+  // color: string;
   hopLabel: HopLabelType;
   showSearchIcon: boolean;
-}> = ({ host, dest, point, color, hopLabel, showSearchIcon }) => {
+}
+
+const PointPopup: React.FC<PointPopupProps> = ({ host, dest, point, color, hopLabel, showSearchIcon }) => {
   return (
     <Popup className="point-popup">
       <div className="region-label">

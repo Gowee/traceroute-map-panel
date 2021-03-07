@@ -13,6 +13,7 @@ import {
   LatLngTuple,
   latLngBounds,
   LatLngBounds,
+  Polyline,
 } from './react-leaflet-compat';
 
 import { TracerouteMapOptions } from './options';
@@ -35,6 +36,8 @@ import {
 } from './data';
 import HostTray from './components/HostTray';
 import RoutePath from './components/RoutePath';
+import PointPopup, { GenericPointPopupProps } from 'components/PointPopup';
+import AntSpline, { GenericPathLineProps } from 'components/AntSpline';
 
 interface Props extends PanelProps<TracerouteMapOptions> {}
 
@@ -178,6 +181,12 @@ export class TracerouteMapPanel extends Component<Props, State> {
     const effectiveBounds = this.getEffectiveBounds();
     const hostnameProcessor = this.props.options.simplifyHostname ? simplyHostname : (v: string) => v;
 
+    const Popup = (props: GenericPointPopupProps) => (
+      <PointPopup {...props} hopLabel={options.hopLabelType} showSearchIcon={options.showSearchIconInHopLabel} />
+    );
+    const PathLine: React.ComponentType<GenericPathLineProps> =
+      options.pathSpline === 'animatedSpline' ? AntSpline : (Polyline as any);
+
     return (
       <LMap
         key={this.state.series}
@@ -210,8 +219,8 @@ export class TracerouteMapPanel extends Component<Props, State> {
                   host={host}
                   points={points}
                   color={palette()}
-                  hopLabel={options.hopLabelType}
-                  showSearchIcon={options.showSearchIconInHopLabel}
+                  Popup={Popup}
+                  PathLine={PathLine}
                   coordWrapper={this.wrapCoord}
                 />
               )
