@@ -39,7 +39,7 @@ import HostTray from './components/HostTray';
 import RoutePath from './components/RoutePath';
 import PointPopup, { GenericPointPopupProps } from 'components/PointPopup';
 import AntSpline, { GenericPathLineProps } from 'components/AntSpline';
-// import { pathToBezierSplinePath2 } from 'spline';
+import { pathToBezierSpline3, pathToBezierSpline2 } from 'spline';
 
 interface Props extends PanelProps<TracerouteMapOptions> {}
 
@@ -203,6 +203,20 @@ export class TracerouteMapPanel extends Component<Props, State> {
     return [lat, lon];
   }
 
+  getPathLine(): React.ComponentType<GenericPathLineProps> {
+    console.log(this.props.options.pathSpline);
+    switch (this.props.options.pathSpline) {
+      case 'spline1':
+        return (props: GenericPathLineProps) => <AntSpline splineFn={pathToBezierSpline3} {...props} />;
+      case 'spline2':
+        return (props: GenericPathLineProps) => <AntSpline splineFn={pathToBezierSpline2} {...props} />;
+      case undefined:
+      default:
+        // A default catch is useful for panel upgration where value type might change
+        return Polyline as any;
+    }
+  }
+
   render() {
     const { width, height, options } = this.props;
     const routes = this.state.routes;
@@ -213,8 +227,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
     const Popup = (props: GenericPointPopupProps) => (
       <PointPopup {...props} hopLabel={options.hopLabelType} showSearchIcon={options.showSearchIconInHopLabel} />
     );
-    const PathLine: React.ComponentType<GenericPathLineProps> =
-      options.pathSpline === 'animatedSpline' ? AntSpline : (Polyline as any);
+    const PathLine = this.getPathLine();
 
     return (
       <LMap

@@ -18,7 +18,7 @@ export interface TracerouteMapOptions {
   hopLabelType: HopLabelType;
   showSearchIconInHopLabel: boolean;
   bogonFilteringSpace: undefined | 'bogon' | 'extendedBogon';
-  pathSpline: undefined | /* 'spline' |*/ 'animatedSpline';
+  pathSpline: undefined | 'spline1' | 'spline2';
 }
 
 export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<TracerouteMapOptions>) =>
@@ -104,7 +104,12 @@ export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<Traceroute
         options: [
           { label: 'Polyline', value: undefined, description: 'Plain polyline' },
           // { label: 'Spline', value: 'spline', description: 'Smoothed spline' },
-          { label: 'Animated Spline', value: 'animatedSpline', description: 'Smoothed spline with flux animation' },
+          { label: 'Spline 1', value: 'spline1', description: 'Smoothed spline with flux animation' },
+          {
+            label: 'Spline 2',
+            value: 'spline2',
+            description: 'Smoothed spline with flux animation, another implementation',
+          },
         ],
       },
     })
