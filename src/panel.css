@@ -4,7 +4,8 @@
  */
 
 .host-tray {
-    line-height: 1; /* for toggler positioning */
+    line-height: 1;
+    /* for toggler positioning */
 }
 
 .hop-list {
@@ -83,14 +84,14 @@
 }
 
 .map-indicator {
-    font-size: 12px;
+    font-size: 1.1em;
     margin: 4px 0 0 0;
-    padding: 4px 8px;
+    padding: 6px 12px;
     border-radius: 2px;
     display: inline-block;
 }
 
-.map-indicator>i:first-child {
+.map-indicator>:first-child {
     margin-right: 0.5em;
 }
 
@@ -101,10 +102,18 @@
     background: #e02f44;
 }
 
+.map-indicator.info {
+    font-weight: 500;
+    color: black;
+    background: rgba(240, 248, 255, 0.618);
+    /* color: #ffffff;
+    background: rgba(0, 0, 0, 0) linear-gradient(90deg, rgb(50, 116, 217), rgb(50, 116, 217)) repeat scroll 0% 0%; */
+}
+
 .map-indicator.loading {
     color: black;
     background: rgba(240, 248, 255, 0.618);
-    font-size: 1.2em;
+    font-size: 1.1em;
 }
 
 .icon-right-space {
@@ -152,7 +161,6 @@ a.decorated {
     /* Some WTF dirty fix for solving hop-detail overflows the width of hop-entry.
         ref: https://stackoverflow.com/questions/38223879/white-space-nowrap-breaks-flexbox-layout */
     min-width: 0;
-
     margin-right: -0.15em;
 }
 
@@ -195,5 +203,6 @@ a.decorated {
 .leaflet-ant-path {
     /* The animation-duration CSS property of AntPath inside MarkerClusterGroup is not set,
         due to unknown reasons. Just patch it anyway. */
-    animation-duration: 90s !important; /* TODO: too dirty now */
+    animation-duration: 90s !important;
+    /* TODO: too dirty now */
 }

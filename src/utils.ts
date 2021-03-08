@@ -70,8 +70,8 @@ export function round(number: number, ndigits: number): number {
 export class HiddenHostsStorage {
   ENTRYID: string;
 
-  constructor(packageID = PACKAGE.name) {
-    const panelID = 'common'; // disable standalone cache per panel for now
+  constructor(panelID: string, packageID = PACKAGE.name) {
+    // const panelID = 'common'; // disable standalone cache per panel for now
     this.ENTRYID = `${packageID}-${panelID}-hidden-hosts`;
   }
 
@@ -363,4 +363,20 @@ export function eliminatePrefixOrSuffix(label1?: string, label2?: string): strin
     label2 = undefined;
   }
   return [label1, label2].filter((value) => value) as string[];
+}
+
+export function parseIntChecked(string: string, radix?: number) {
+  const num = parseInt(string, radix);
+  if (Object.is(num, NaN)) {
+    throw TypeError(`Expected an interger number, got a ${string} as NaN`);
+  }
+  return num;
+}
+
+export function parseFloatChecked(string: string) {
+  const num = parseFloat(string);
+  if (Object.is(num, NaN)) {
+    throw TypeError(`Expected an float number, got a ${string} as NaN`);
+  }
+  return num;
 }

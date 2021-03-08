@@ -12,7 +12,9 @@ export interface AntSplineProps extends GenericPathLineProps {
 }
 
 const AntSpline: React.FC<AntSplineProps> = ({ positions, color, splineFn: spline }) => {
+  console.log(positions);
   const path = spline(positions);
+  console.log(path);
   return <AntPath positions={path} options={{ use: LCurve, color }} />;
 };
 

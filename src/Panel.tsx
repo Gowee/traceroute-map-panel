@@ -2,7 +2,7 @@
 
 import React, { Component, createRef, MouseEvent, useState } from 'react';
 import { PanelProps, LoadingState, DataFrame } from '@grafana/data';
-import { Icon, Button, Tooltip, Spinner } from '@grafana/ui';
+import { Icon, Button, Tooltip, Spinner, Alert, IconName } from '@grafana/ui';
 // import { keys } from 'ts-transformer-keys';
 import _ from 'lodash';
 import {
@@ -30,7 +30,7 @@ import 'panel.css';
 import {
   DataEntry,
   RoutePoint,
-  dataFrameToEntries,
+  seriesToEntries,
   entriesToRoutes,
   prependZerothHopsBySrcHosts,
   routesToBounds,
@@ -40,8 +40,11 @@ import RoutePath from './components/RoutePath';
 import PointPopup, { GenericPointPopupProps } from 'components/PointPopup';
 import AntSpline, { GenericPathLineProps } from 'components/AntSpline';
 import { pathToBezierSpline3, pathToBezierSpline2 } from 'spline';
+import { UserFriendlyError, NoDataError, InformationalError, getIconFromSeverity } from 'errors';
 
 interface Props extends PanelProps<TracerouteMapOptions> {}
+
+type Indicator = 'loading' | UserFriendlyError | Error;
 
 interface State {
   routes: Map<string, RoutePoint[]>;
@@ -49,7 +52,7 @@ interface State {
   mapBounds: Map<string, LatLngTuple[]>;
   hiddenHosts: Set<string>;
   hostListExpanded: boolean;
-  indicator?: 'loading' | 'error';
+  indicator?: Indicator;
 }
 
 export class TracerouteMapPanel extends Component<Props, State> {
@@ -106,19 +109,28 @@ export class TracerouteMapPanel extends Component<Props, State> {
     console.log('loading');
     this.setState({ indicator: 'loading', series: this.props.data.series });
     try {
-      const { routes: data, mapBounds } = await this.processData(this.props.data.series);
-      this.setState({ indicator: undefined, routes: data, mapBounds });
-    } catch (e) {
-      this.setState({ indicator: 'error' });
-      console.error(e);
+      const { routes, mapBounds } = await this.processData(this.props.data.series);
+      this.setState({ indicator: undefined, routes, mapBounds });
+    } catch (error) {
+      if (error instanceof InformationalError) {
+        this.setState({ indicator: error, routes: new Map(), mapBounds: new Map() });
+        console.log(error);
+      } else {
+        // TODO: whether to clear data or not?
+        this.setState({ indicator: error });
+        console.error(error);
+      }
+      // console.log(error, error instanceof NoDataError, error instanceof Error, error instanceof UserFriendlyError, "boom");
     }
   }
 
   async processData(
     series: DataFrame[]
   ): Promise<{ routes: Map<string, RoutePoint[]>; mapBounds: Map<string, LatLngTuple[]> }> {
-    if (series.length !== 1 || series[0].fields.length !== 7) {
-      throw new Error('Data is empty or not formatted as table');
+    let entries = seriesToEntries(series);
+    if (entries.length === 0) {
+      // Multiple series indicate multiple querys. series.length has nothing to do with entries.length.
+      throw new NoDataError('No query or query is empty');
     }
     const options = this.props.options;
 
@@ -126,8 +138,6 @@ export class TracerouteMapPanel extends Component<Props, State> {
       ? makeThrottler<string, unknown[], IPGeo>(options.concurrentRequests, options.requestsPerSecond)
       : undefined;
     const ip2geo = IP2Geo.fromProvider(options.geoIPProviders[options.geoIPProviders.active], geoIPThrottler);
-
-    let entries = dataFrameToEntries(series[0]);
 
     if (options.srcHostAsZerothHop) {
       // No option of parallelization for DoH resolution so far. Just hardcode for now.
@@ -143,11 +153,13 @@ export class TracerouteMapPanel extends Component<Props, State> {
       };
     }
     entries = entries.filter((entry) => !bogonFilterer(entry[3] /* hop IP */));
+    // TODO: even though all entries are filtered out for a route, it should still be in host tray.
 
     const geos = await Promise.all(entries.map(async (entry) => await ip2geo(entry[3] /* hop IP */)));
 
     const routes = await entriesToRoutes(_.zip(entries, geos) as Array<[DataEntry, IPGeo]>);
     const mapBounds = this.routesToBounds(routes);
+    console.log(entries, routes, mapBounds);
     return { routes, mapBounds };
   }
 
@@ -282,44 +294,103 @@ export class TracerouteMapPanel extends Component<Props, State> {
             hostnameProcessor={hostnameProcessor}
           />
         </Control>
-        <TopRightControl statusIndicator={this.state.indicator} handleFit={this.handleFit} />
+        <Control position="topright">
+          {this.state.indicator === undefined ? (
+            <FunctionButtons handleFit={this.handleFit} />
+          ) : (
+            <StatusIndicator status={this.state.indicator} />
+          )}
+        </Control>
       </LMap>
     );
   }
 }
 
-const TopRightControl: React.FC<{ statusIndicator?: 'loading' | 'error'; handleFit: (event: MouseEvent) => void }> = ({
-  statusIndicator,
-  handleFit,
-}) => (
-  <Control position="topright">
-    {(() => {
-      switch (statusIndicator) {
-        case undefined:
-          return (
-            <Button variant="primary" size="md" onClick={handleFit} title="Fit the map view to all points">
-              {/* FIX: @grafana/ui Button keeps active state */}
-              Fit
-            </Button>
-          );
-        case 'loading':
-          return (
-            <span className="map-indicator loading">
-              {/* <Spinner /> */}
-              <i className="fa fa-spinner fa-spin" />
-              Loading
-            </span>
-          );
-        case 'error':
-          return (
-            <Tooltip content="The Debugging Console shows the detailed error." theme="error">
-              <span className="map-indicator error" title="">
-                <i className="fa fa-warning" />
-                Error processing data
-              </span>
-            </Tooltip>
-          );
-      }
-    })()}
-  </Control>
+const FunctionButtons: React.FC<{ handleFit: (event: MouseEvent) => void }> = ({ handleFit }) => (
+  <Button variant="primary" size="md" onClick={handleFit} title="Fit the map view to all points">
+    {/* FIX: @grafana/ui Button keeps active state */}
+    Fit
+  </Button>
 );
+
+const StatusIndicator: React.FC<{ status: Indicator }> = ({ status }) => {
+  console.log(status, status instanceof UserFriendlyError, status instanceof NoDataError);
+  if (status === 'loading') {
+    return (
+      <Tooltip content="It may take a while to load, mainly due to Geo IP resolution" theme="info">
+        <span className="map-indicator loading">
+          {/* <Spinner /> */}
+          <i className="fa fa-spinner fa-spin" />
+          Loading
+        </span>
+      </Tooltip>
+    );
+  } else if (status instanceof UserFriendlyError) {
+    const message = status.shortMessage;
+    const description = status.message;
+    const severity = status.severity ?? 'error';
+    const tooltipTheme = severity === 'error' ? 'error' : 'info';
+    const iconName = getIconFromSeverity(severity) as IconName;
+    return (
+      <Tooltip content={description} theme={tooltipTheme}>
+        <span className={`map-indicator ${severity}`}>
+          <Icon name={iconName} />
+          {message}
+        </span>
+      </Tooltip>
+    );
+  } else {
+    let message = 'The error has been logged in the Debugging Console';
+    if (status.toString()) {
+      message += ': \t' + status.toString();
+    }
+    return (
+      <Tooltip content={message} theme="error">
+        <span className="map-indicator error" title="">
+          <i className="fa fa-warning" />
+          Error processing data
+        </span>
+      </Tooltip>
+    );
+  }
+
+  // <Control position="topright">
+  //   {(() => {
+  //     switch (status) {
+  //       case 'loading':
+  //         return (
+  //           <Tooltip content="It may take a while to load, mainly due to Geo IP resolution" theme="info">
+  //             <span className="map-indicator loading">
+  //               {/* <Spinner /> */}
+  //               <i className="fa fa-spinner fa-spin" />
+  //             Loading
+  //           </span>
+  //           </Tooltip>
+  //         );
+  //       case 'noData':
+  //         return (
+  //           <Tooltip content="Data schema is valid while entries are empty" theme="info">
+  //             <span className="map-indicator nodata">
+  //               <i className="fa fa-info-circle" />
+  //             Loading
+  //           </span>
+  //           </Tooltip>
+  //         );
+  //       case 'error':
+  //     }
+  //   })()}
+  // </Control>
+};
+
+// function tracePrototypeChainOf(object: any): any {
+
+//   var proto = object.constructor.prototype;
+//   var result = '';
+
+//   while (proto) {
+//       result += ' -> ' + proto.constructor.name;
+//       proto = Object.getPrototypeOf(proto)
+//   }
+
+//   return result;
+// }

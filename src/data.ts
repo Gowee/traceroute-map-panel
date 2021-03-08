@@ -2,8 +2,9 @@ import _ from 'lodash';
 import { DataFrame } from '@grafana/data';
 import { latLngBounds, LatLngTuple } from './react-leaflet-compat';
 
-import { round, Throttler, resolveHostname } from './utils';
+import { round, Throttler, resolveHostname, parseIntChecked } from './utils';
 import { IPGeo } from './geoip/api';
+import { InvalidSchemaError } from 'errors';
 
 export type DataEntry = [string, string, number, string, number, number];
 
@@ -23,11 +24,27 @@ export interface RoutePoint {
 /**
  * Process the raw data frame to produce entries of fields `['host', 'dest', 'hop', 'ip', 'rtt', 'loss']`.
  *
+ * @param series The series containing one or more data frame.
+ * @returns Entries of fields.
+ */
+export function seriesToEntries(series: DataFrame[]): DataEntry[] {
+  // TODO: how to make this function generic?
+  let entries: DataEntry[] = [];
+  for (const frame of series) {
+    entries = entries.concat(dataFrameToEntriesUnsorted(frame));
+  }
+  entries.sort((a, b) => a[2] - b[2]);
+  return entries;
+}
+
+/**
+ * Process the raw data frame to produce entries of fields `['host', 'dest', 'hop', 'ip', 'rtt', 'loss']`.
+ *
  * @param frame The raw data frame to be processed. It is expected to inlude the expected fields.
  * @return Entries of fields.
  */
-export function dataFrameToEntries(frame: DataFrame): DataEntry[] {
-  // TODO: how to make this function generic?
+export function dataFrameToEntriesUnsorted(frame: DataFrame): DataEntry[] {
+  // TODO: full iterator
   let fields: any = {};
   ['host', 'dest', 'hop', 'ip', 'rtt', 'loss'].forEach((item) => (fields[item] = null));
   for (const field of frame.fields) {
@@ -37,20 +54,28 @@ export function dataFrameToEntries(frame: DataFrame): DataEntry[] {
         console.log('Ignoring field: ' + field.name);
       } */
   }
+  // TODO: format as data notice
   if (Object.values(fields).includes(null)) {
-    throw new Error('Invalid data schema');
+    const missingFields = Object.entries(fields)
+      .filter(([_key, value]) => value === null)
+      .map(([key, _value]) => key)
+      .join(', ');
+    throw new InvalidSchemaError(
+      missingFields
+        ? 'Field(s) are missing from the data: ' + missingFields
+        : 'Is the data formatted as table when querying InfluxDB?'
+    );
   }
   // Note: map(parseInt) does work as intended.
   //  ref: https://medium.com/dailyjs/parseint-mystery-7c4368ef7b21
   let entries = _.zip(
     fields.host,
     fields.dest,
-    fields.hop.map((v: string) => parseInt(v, 10)),
+    fields.hop.map((v: string) => parseIntChecked(v, 10)),
     fields.ip,
-    fields.rtt.map((v: string) => parseFloat(v)),
+    fields.rtt.map((v: string) => parseFloat(v)), // not acctually useful for now, so no check is fine
     fields.loss.map((v: string) => parseFloat(v))
   ) as DataEntry[];
-  entries.sort((a, b) => a[2] - b[2]);
   return entries;
 }
 
