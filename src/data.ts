@@ -58,13 +58,18 @@ export function dataFrameToEntriesUnsorted(frame: DataFrame): DataEntry[] {
   if (Object.values(fields).includes(null)) {
     const missingFields = Object.entries(fields)
       .filter(([_key, value]) => value === null)
-      .map(([key, _value]) => key)
-      .join(', ');
-    throw new InvalidSchemaError(
-      missingFields
-        ? 'Field(s) are missing from the data: ' + missingFields
-        : 'Is the data formatted as table when querying InfluxDB?'
-    );
+      .map(([key, _value]) => key);
+    let message;
+    if (missingFields.length === 6) {
+      if (frame.fields.map((field) => field.name).includes('time')) {
+        message = 'Is the data formatted as table when querying InfluxDB?';
+      } else {
+        message = 'All expected fields are missing.';
+      }
+    } else {
+      message = 'Field(s) are missing from the data: ' + missingFields.join(', ');
+    }
+    throw new InvalidSchemaError(message);
   }
   // Note: map(parseInt) does work as intended.
   //  ref: https://medium.com/dailyjs/parseint-mystery-7c4368ef7b21
@@ -111,6 +116,7 @@ export async function entriesToRoutes(
       group.set(point_id, point);
     }
     // Add a new hop record at this point.
+    // TODO: Repeated hops are not handled at all so far. They are filtered out by the sample InfluxDB query.
     point.hops.push({ nth: hop, ip, label: label ?? 'unknown network', rtt, loss });
   }
   return new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())]));

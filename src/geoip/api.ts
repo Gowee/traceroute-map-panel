@@ -230,8 +230,8 @@ export class IP2Geo {
     const country_name = country?.isoName; // TODO: name / isoName pick shorter
     const state_or_province = location?.isoPrincipalSubdivision;
     const city = location?.city;
-    const lat = location.latitude;
-    const lon = location.longitude;
+    const lat = location?.latitude;
+    const lon = location?.longitude;
     const organisation = network?.organisation;
     const asn = network?.carriers[0]?.asn;
     console.log(city, state_or_province, country_name);

@@ -19,6 +19,7 @@ export interface TracerouteMapOptions {
   showSearchIconInHopLabel: boolean;
   bogonFilteringSpace: undefined | 'bogon' | 'extendedBogon';
   pathSpline: undefined | 'spline1' | 'spline2';
+  // disableTimeRangeLimit: boolean;
 }
 
 export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<TracerouteMapOptions>) =>
@@ -113,6 +114,12 @@ export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<Traceroute
         ],
       },
     })
+    // .addBooleanSwitch({
+    //   path: 'disableTimeRangeLimit',
+    //   name: 'Disable Time Range Limit',
+    //   description: 'Which prevent loading too much data accidentally',
+    //   defaultValue: true,
+    // })
     .addCustomEditor({
       id: 'geoIPProviders',
       path: 'geoIPProviders',

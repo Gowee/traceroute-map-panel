@@ -31,9 +31,11 @@ select hop, ip, rtt, loss from (select mean(avg) as rtt, mean(loss) as loss from
 #### Query in Grafana
 This query is more straightforward and intended to be read by Grafana.
 ```sql
-select mean(avg) as rtt, mean(loss) as loss from mtr WHERE now() - 5m < time group by hop, ip, host, dest
+select mean(avg) as rtt, mean(loss) as loss from mtr WHERE ${__to}ms - 5m <= time AND time <= ${__to}ms group by hop, ip, host, dest
 ```
 & *Format as __Table__*.
+
+<!-- select mean(avg) as rtt, mean(loss) as loss from mtr WHERE now() - 5m < time group by hop, ip, host, dest -->
 
 Or (less recommended, see [Notes](#time-filter)):
 ```sql

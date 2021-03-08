@@ -40,7 +40,13 @@ import RoutePath from './components/RoutePath';
 import PointPopup, { GenericPointPopupProps } from 'components/PointPopup';
 import AntSpline, { GenericPathLineProps } from 'components/AntSpline';
 import { pathToBezierSpline3, pathToBezierSpline2 } from 'spline';
-import { UserFriendlyError, NoDataError, InformationalError, getIconFromSeverity } from 'errors';
+import {
+  UserFriendlyError,
+  NoDataError,
+  InformationalError,
+  getIconFromSeverity,
+  TimerangeOverflowError,
+} from 'errors';
 
 interface Props extends PanelProps<TracerouteMapOptions> {}
 
@@ -75,6 +81,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
     this.updateData();
     this.handleFit = this.handleFit.bind(this);
     this.wrapCoord = this.wrapCoord.bind(this);
+    this.toggleHostItem = this.toggleHostItem.bind(this);
   }
 
   componentDidUpdate(prevProps: Props): void {
@@ -109,7 +116,9 @@ export class TracerouteMapPanel extends Component<Props, State> {
     console.log('loading');
     this.setState({ indicator: 'loading', series: this.props.data.series });
     try {
+      // this.checkTimeRange();
       const { routes, mapBounds } = await this.processData(this.props.data.series);
+      console.log(this.props.data);
       this.setState({ indicator: undefined, routes, mapBounds });
     } catch (error) {
       if (error instanceof InformationalError) {
@@ -174,6 +183,16 @@ export class TracerouteMapPanel extends Component<Props, State> {
     }
     return routesToBounds(routes, pathProcesser, coordProcessor);
   }
+
+  // This time range is not the time range manually specified in query. So it does not make much sense.
+  //   checkTimeRange() {
+  //     const { from, to } = this.props.data.timeRange;
+  //     if (to.diff(from) > 1 * 60 * 60 * 1000) {
+  //       throw new TimerangeOverflowError(`Long time range usually implies a problem in query.
+  // By default, the panel prevents loading data with time ranging over 1 hour.
+  // This limit can be disabled in options.`);
+  //     }
+  //   }
 
   toggleHostItem(item: string) {
     this.setState({ hiddenHosts: this.hiddenHostsStorage.toggle(item) });
