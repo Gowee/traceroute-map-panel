@@ -70,6 +70,8 @@ export function interpolate1(latLons: Array<[number, number]>): Array<[number, n
 export function pathToBezierSpline1(latLons: Array<[number, number]>): any {
   if (latLons.length === 0) {
     return [];
+  } else if (latLons.length <= 2) {
+    return ['M', ...latLons];
   }
   const controlPoints = bezierSpline.getControlPoints(latLons);
   // eslint-disable-next-line no-console
@@ -94,6 +96,8 @@ export function pathToBezierSpline2(
 ): any {
   if (latLons.length === 0) {
     return [];
+  } else if (latLons.length <= 2) {
+    return ['M', ...latLons];
   }
   const spline = new BezierSpline(latLons, weightsFn);
 
