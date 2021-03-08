@@ -31,13 +31,15 @@ import {
   DataEntry,
   RoutePoint,
   dataFrameToEntries,
-  entriesToRoutesAndBounds,
+  entriesToRoutes,
   prependZerothHopsBySrcHosts,
+  routesToBounds,
 } from './data';
 import HostTray from './components/HostTray';
 import RoutePath from './components/RoutePath';
 import PointPopup, { GenericPointPopupProps } from 'components/PointPopup';
 import AntSpline, { GenericPathLineProps } from 'components/AntSpline';
+// import { pathToBezierSplinePath2 } from 'spline';
 
 interface Props extends PanelProps<TracerouteMapOptions> {}
 
@@ -90,6 +92,13 @@ export class TracerouteMapPanel extends Component<Props, State> {
       this.props.options.bogonFilteringSpace !== this.props.options.bogonFilteringSpace
     ) {
       this.updateData();
+    } else if (
+      /* prevProps.options.pathSpline !== this.props.options.pathSpline || */
+      prevProps.options.longitudeWrapping !== this.props.options.longitudeWrapping
+    ) {
+      // TODO: recalculate map bounds
+      console.log('recalculate map bounds');
+      this.setState({ mapBounds: this.routesToBounds(this.state.routes) });
     }
   }
 
@@ -137,8 +146,21 @@ export class TracerouteMapPanel extends Component<Props, State> {
 
     const geos = await Promise.all(entries.map(async (entry) => await ip2geo(entry[3] /* hop IP */)));
 
-    const routesAndBounds = await entriesToRoutesAndBounds(_.zip(entries, geos) as Array<[DataEntry, IPGeo]>);
-    return routesAndBounds;
+    const routes = await entriesToRoutes(_.zip(entries, geos) as Array<[DataEntry, IPGeo]>);
+    const mapBounds = this.routesToBounds(routes);
+    return { routes, mapBounds };
+  }
+
+  routesToBounds(routes: Map<string, RoutePoint[]>): Map<string, LatLngTuple[]> {
+    let pathProcesser = undefined;
+    // if (this.props.options.pathSpline === 'animatedSpline') {
+    //   pathProcesser = pathToBezierSplinePath2;
+    // }
+    let coordProcessor = undefined;
+    if (this.props.options.longitudeWrapping !== undefined) {
+      coordProcessor = this.wrapCoord;
+    }
+    return routesToBounds(routes, pathProcesser, coordProcessor);
   }
 
   toggleHostItem(item: string) {
@@ -155,8 +177,10 @@ export class TracerouteMapPanel extends Component<Props, State> {
   getEffectiveBounds(): LatLngBounds | undefined {
     const tuples = Array.from(this.state.mapBounds.entries())
       .filter(([key, _value]) => !this.state.hiddenHosts.has(key))
-      .flatMap(([_key, tuples]) => tuples)
-      .map((tuple) => this.wrapCoord(tuple));
+      .flatMap(([_key, tuples]) => tuples);
+    // Wrapping longitude over bounds instead of all points is incorrect.
+    // So now bounds for wrapped coords are pre-calculated per option settings.
+    // .map((tuple) => this.wrapCoord(tuple));
     return tuples.length ? latLngBounds(tuples) : undefined;
   }
 
@@ -168,8 +192,13 @@ export class TracerouteMapPanel extends Component<Props, State> {
 
   wrapCoord(coord: LatLngTuple): LatLngTuple {
     let [lat, lon] = coord;
-    if (this.props.options.longitude360) {
-      lon = (lon + 360) % 360;
+    if (this.props.options.longitudeWrapping) {
+      if (this.props.options.longitudeWrapping === 'primeMeridian') {
+        lon = (lon + 360) % 360;
+      } else {
+        // https://gis.stackexchange.com/a/303362/178627
+        lon = (((lon % 360) + 540) % 360) - 180;
+      }
     }
     return [lat, lon];
   }
@@ -227,6 +256,9 @@ export class TracerouteMapPanel extends Component<Props, State> {
             );
           })}
         </MarkerClusterGroup>
+        {effectiveBounds && (
+          <Polyline positions={[effectiveBounds.getNorthEast() as any, effectiveBounds.getSouthWest() as any]} />
+        )}
         <Control position="bottomleft">
           <HostTray
             expanded={true}

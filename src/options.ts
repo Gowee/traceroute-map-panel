@@ -2,11 +2,12 @@ import { PanelOptionsEditorBuilder } from '@grafana/data';
 
 import GeoIPProvidersEditor, { GeoIPProvidersOption } from './geoip/Editor';
 
+export type LongitudeWrapping = undefined | 'primeMeridian' | 'antimeridian';
 export type HopLabelType = 'label' | 'ip' | 'ipAndLabel';
 
 export interface TracerouteMapOptions {
   geoIPProviders: GeoIPProvidersOption;
-  longitude360: boolean;
+  longitudeWrapping: LongitudeWrapping;
   mapClusterRadius: number;
   hostnameLabelWidth: number; // in em
   simplifyHostname: boolean;
@@ -22,11 +23,26 @@ export interface TracerouteMapOptions {
 
 export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<TracerouteMapOptions>) =>
   builder
-    .addBooleanSwitch({
-      path: 'longitude360',
-      name: 'Wrap Longitude to [0°, 360°)',
-      description: "So that it won't lay within [-180°, 0°)",
-      defaultValue: false,
+    .addRadio({
+      path: 'longitudeWrapping',
+      name: 'Wrap Longitude around Meridians',
+      description: 'Prevent route paths from crossing meridians',
+      defaultValue: undefined as LongitudeWrapping,
+      settings: {
+        options: [
+          { label: 'None', value: undefined, description: 'No wrapping' },
+          {
+            label: 'Prime (0°)',
+            value: 'primeMeridian',
+            description: "Longtitude won't cross the prime meridian.",
+          },
+          {
+            label: '180° (anti)',
+            value: 'antimeridian',
+            description: "Longtitude won't cross the opposite meridian.",
+          },
+        ],
+      },
     })
     .addSliderInput({
       path: 'mapClusterRadius',
@@ -100,28 +116,6 @@ export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<Traceroute
       defaultValue: GeoIPProvidersEditor.defaultValue,
       category: ['GeoIP Service'],
     })
-    .addSelect({
-      path: 'bogonFilteringSpace',
-      name: 'Bogon Filtering Space' /* Filter Out "Bogus" IPs */,
-      description: 'Proactively filter out IPs in Bogon Space',
-      defaultValue: 'bogon',
-      settings: {
-        options: [
-          { label: 'None', value: undefined, description: 'Pass all IPs to GeoIP API without filtering' },
-          {
-            label: 'Bogon (private + reserved)',
-            value: 'bogon',
-            description: 'Exclude private or reserved IPs like 10/8',
-          },
-          {
-            label: 'Bogon + DoD',
-            value: 'extendedBogon',
-            description: 'In addition to Bogon, exclude some DoD IPs like 11/8',
-          },
-        ],
-      },
-      category: ['GeoIP Service'],
-    })
     .addBooleanSwitch({
       path: 'parallelizeGeoIP',
       name: 'Parallelize GeoIP resolution',
@@ -150,4 +144,26 @@ export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<Traceroute
       },
       category: ['GeoIP Service'],
       showIf: (currentOptions) => currentOptions.parallelizeGeoIP === true,
+    })
+    .addSelect({
+      path: 'bogonFilteringSpace',
+      name: 'Bogon Filtering Space' /* Filter Out "Bogus" IPs */,
+      description: 'Proactively filter out IPs in Bogon Space',
+      defaultValue: 'bogon',
+      settings: {
+        options: [
+          { label: 'None', value: undefined, description: 'Pass all IPs to GeoIP API without filtering' },
+          {
+            label: 'Bogon (private + reserved)',
+            value: 'bogon',
+            description: 'Exclude private or reserved IPs like 10/8',
+          },
+          {
+            label: 'Bogon + DoD',
+            value: 'extendedBogon',
+            description: 'In addition to Bogon, exclude some DoD IPs like 11/8',
+          },
+        ],
+      },
+      category: ['GeoIP Service'],
     });

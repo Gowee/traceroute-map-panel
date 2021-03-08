@@ -59,9 +59,9 @@ export function dataFrameToEntries(frame: DataFrame): DataEntry[] {
  * @param entries Entries.
  * @param options Panel options.
  */
-export async function entriesToRoutesAndBounds(
+export async function entriesToRoutes(
   entries_with_geos: Array<[DataEntry, IPGeo]>
-): Promise<{ routes: Map<string, RoutePoint[]>; mapBounds: Map<string, LatLngTuple[]> }> {
+): Promise<Map<string, RoutePoint[]>> {
   // TODO: use catersian product to handle non-linear route paths
 
   let data: Map<string, Map<string, RoutePoint>> = new Map();
@@ -88,18 +88,38 @@ export async function entriesToRoutesAndBounds(
     // Add a new hop record at this point.
     point.hops.push({ nth: hop, ip, label: label ?? 'unknown network', rtt, loss });
   }
+  return new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())]));
+}
+
+export function routesToBounds(
+  routes: Map<string, RoutePoint[]>,
+  pathProcessor?: (path: LatLngTuple[]) => LatLngTuple[],
+  coordProcessor?: (coord: LatLngTuple) => LatLngTuple
+): Map<string, LatLngTuple[]> {
   let mapBounds: Map<string, LatLngTuple[]> = new Map();
-  for (const [key, points] of Array.from(data.entries())) {
-    const bound = latLngBounds(Array.from(points.values()).map((point) => [point.lat, point.lon]));
-    mapBounds.set(key, [
-      [bound.getSouth(), bound.getWest()],
-      [bound.getNorth(), bound.getEast()],
-    ]);
+  for (const [key, route] of routes.entries()) {
+    mapBounds.set(key, routeToBound(route, pathProcessor, coordProcessor));
   }
-  return {
-    routes: new Map(Array.from(data.entries()).map(([key, value]) => [key, Array.from(value.values())])),
-    mapBounds,
-  };
+  return mapBounds;
+}
+
+export function routeToBound(
+  route: RoutePoint[],
+  pathProcessor?: (path: LatLngTuple[]) => LatLngTuple[],
+  coordProcessor?: (coord: LatLngTuple) => LatLngTuple
+): LatLngTuple[] {
+  let path = route.map((point) => [point.lat, point.lon] as LatLngTuple);
+  if (pathProcessor) {
+    path = pathProcessor(path);
+  }
+  if (coordProcessor) {
+    path = path.map(coordProcessor);
+  }
+  const bound = latLngBounds(path);
+  return [
+    [bound.getSouth(), bound.getWest()],
+    [bound.getNorth(), bound.getEast()],
+  ];
 }
 
 export async function prependZerothHopsBySrcHosts(
