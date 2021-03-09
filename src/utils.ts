@@ -316,7 +316,13 @@ async function resolveDoH(name: string, type: string): Promise<string | null> {
   if (body.Status !== 0) {
     throw new Error(`Query DoH failed with status ${resp}`);
   }
-  return body?.Answer[0]?.data ?? null;
+  for (const ans of body?.Answer ?? []) {
+    // Answer might contain additional data, such as CNAME when questioning A. 
+    if (ans?.type === body?.Question[0]?.type) {
+      return ans?.data ?? null;
+    }
+  }
+  return null;
 }
 
 async function resolveAorAAAA(name: string): Promise<string | null> {
