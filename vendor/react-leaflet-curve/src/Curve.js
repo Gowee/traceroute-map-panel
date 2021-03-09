@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { Path, withLeaflet } from "react-leaflet";
-import { curve } from "./leaflet.curve";
+// import { curve } from "./leaflet.curve";
 
 class Curve extends Path {
   createLeafletElement(props) {

@@ -2,7 +2,7 @@
   "name": "react-leaflet-curve",
   "version": "2.0.0",
   "description": "Bezier Curves as React compoment for Leaflet",
-  "main": "dist/react-leaflet-curve.js",
+  "main": "src/Curve.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean:lib": "rm -Rf ./lib",
