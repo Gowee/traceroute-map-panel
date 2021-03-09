@@ -1,0 +1,77 @@
+{
+  "name": "react-leaflet-curve",
+  "version": "2.0.0",
+  "description": "Bezier Curves as React compoment for Leaflet",
+  "main": "dist/react-leaflet-curve.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean:lib": "rm -Rf ./lib",
+    "compile:lib": "babel src --out-dir lib",
+    "build:lib": "npm run clean:lib && npm run compile:lib",
+    "build:dist": "webpack src/index.js dist/react-leaflet-curve.js & webpack -p src/index.js dist/react-leaflet-curve.min.js",
+    "build": "npm run build:lib && npm run build:dist",
+    "example": "webpack-dev-server --config ./example/webpack.config.js",
+    "lint": "eslint ./src",
+    "release:major": "npm version major && git push --follow-tags",
+    "release:minor": "npm version minor && git push --follow-tags",
+    "release:patch": "npm version patch && git push --follow-tags",
+    "publish": "npm publish"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com:Shadowman4205/react-leaflet-curve.git"
+  },
+  "keywords": [
+    "react",
+    "leaflet",
+    "bezier",
+    "curve"
+  ],
+  "author": "EPOZ",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Shadowman4205/react-leaflet-curve/issues"
+  },
+  "homepage": "https://github.com/Shadowman4205/react-leaflet-curve#readme",
+  "peerDependencies": {
+    "leaflet": "^1.5.1",
+    "prop-types": "^15.7.2",
+    "react": "^16.12.0",
+    "react-leaflet": "^2.5.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.7.0",
+    "@babel/core": "^7.7.2",
+    "@babel/plugin-proposal-class-properties": "^7.7.0",
+    "@babel/plugin-proposal-decorators": "^7.7.0",
+    "@babel/plugin-proposal-do-expressions": "^7.6.0",
+    "@babel/plugin-proposal-export-default-from": "^7.5.2",
+    "@babel/plugin-proposal-export-namespace-from": "^7.5.2",
+    "@babel/plugin-proposal-function-bind": "^7.2.0",
+    "@babel/plugin-proposal-function-sent": "^7.7.0",
+    "@babel/plugin-proposal-json-strings": "^7.2.0",
+    "@babel/plugin-proposal-logical-assignment-operators": "^7.2.0",
+    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.4.4",
+    "@babel/plugin-proposal-numeric-separator": "^7.2.0",
+    "@babel/plugin-proposal-optional-chaining": "^7.6.0",
+    "@babel/plugin-proposal-pipeline-operator": "^7.5.0",
+    "@babel/plugin-proposal-throw-expressions": "^7.2.0",
+    "@babel/plugin-syntax-dynamic-import": "^7.2.0",
+    "@babel/plugin-syntax-import-meta": "^7.2.0",
+    "@babel/preset-env": "^7.7.1",
+    "@babel/preset-react": "^7.7.0",
+    "babel-eslint": "^10.0.3",
+    "babel-loader": "^8.0.6",
+    "eslint": "^6.6.0",
+    "eslint-plugin-react": "^7.16.0",
+    "leaflet": "^1.5.1",
+    "lodash.isequal": "^4.5.0",
+    "prop-types": "^15.7.2",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "react-leaflet": "^2.5.0",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.9.0"
+  }
+}
