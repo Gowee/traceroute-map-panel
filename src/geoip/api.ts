@@ -3,7 +3,7 @@
 ///* eslint-disable @typescript-eslint/interface-name-prefix */
 ///* eslint-disable @typescript-eslint/naming-convention */
 
-import { GeoIPResolutionError, SignificantError, UserFriendlyError } from 'errors';
+import { GeoIPResolutionError, UserFriendlyError } from 'errors';
 import { PACKAGE, isValidIPAddress, regionJoin, orgJoin, eliminatePrefixOrSuffix } from '../utils';
 
 // candidante cache providers:
@@ -244,10 +244,10 @@ export class IP2Geo {
     const lon = location?.longitude;
     const organisation = network?.organisation;
     const asn = network?.carriers?.[0]?.asn;
-    console.log(city, state_or_province, country_name);
+    // console.log(city, state_or_province, country_name);
     const region = regionJoin(city, state_or_province, country_name);
     const label = eliminatePrefixOrSuffix(organisation, asn).join(' via ');
-    console.log(network, network?.carriers?.[0], organisation, asn, label);
+    // console.log(network, network?.carriers?.[0], organisation, asn, label);
     return { region, label, lon, lat };
   }
 

@@ -1,14 +1,10 @@
 import React, { ComponentType, ReactElement } from 'react';
-import { LatLngTuple, Marker, Lcurve } from '../react-leaflet-compat';
-import AntPath from 'react-leaflet-ant-path';
+import { LatLngTuple, Marker } from '../react-leaflet-compat';
 
 import { round } from '../utils';
 import { RoutePoint } from '../data';
-import { HopLabelType } from '../options';
-// import { interpolate1, pathToBezierSpline1, pathToBezierSplinePath2 } from '../spline';
 import { GenericPointPopupProps } from './PointPopup';
 import { GenericPathLineProps } from './line';
-import { Polyline } from 'react-leaflet';
 
 export interface RoutePathProps {
   host: string;
@@ -44,20 +40,6 @@ function RoutePath(props: RoutePathProps): ReactElement {
         </Marker>
       ))}
       <PathLine positions={path} color={color} />
-
-      {/* <AntPath
-        positions={pathToBezierSpline1(points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple))}
-        options={{ use: Lcurve, color }}
-      />
-      <AntPath
-        positions={pathToBezierSpline2(points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple))}
-        options={{ use: Lcurve, color: 'blue' }}
-      /> */}
-
-      {/* <Polyline
-        positions={points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple)}
-        color={color}
-      ></Polyline> */}
     </div>
   );
 }

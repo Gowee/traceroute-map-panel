@@ -1,5 +1,5 @@
 import { CustomError } from 'ts-custom-error';
-import { AlertVariant as Severity, IconName } from '@grafana/ui';
+import { AlertVariant as Severity } from '@grafana/ui';
 
 // Ref: https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
 // export class BaseError extends Error {

@@ -37,10 +37,8 @@ const PointPopup: React.FC<PointPopupProps> = ({ host, dest, point, color, hopLa
           <li
             className="hop-entry"
             key={hop.nth}
-            title={`${hop.ip} (${hop.label ?? 'No network info available'}) RTT:${round(hop.rtt, 2)} Loss:${round(
-              hop.loss,
-              2
-            )}`}
+            title={`${hop.ip} (${hop.label ?? 'No network info available'}) \
+RTT:${round(hop.rtt, 2)} Loss:${round(hop.loss, 2)}`}
           >
             <span className="hop-nth">{hop.nth}.</span>{' '}
             <span className="hop-detail">

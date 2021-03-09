@@ -16,6 +16,13 @@ import {
   Polyline,
 } from './react-leaflet-compat';
 
+import {
+  UserFriendlyError,
+  NoDataError,
+  InformationalError,
+  getIconFromSeverity,
+  // TimerangeOverflowError,
+} from 'errors';
 import { TracerouteMapOptions } from './options';
 import { IP2Geo, IPGeo } from './geoip/api';
 import {
@@ -40,13 +47,6 @@ import RoutePath from './components/RoutePath';
 import PointPopup, { GenericPointPopupProps } from 'components/PointPopup';
 import { AntSpline, SimpleSpline, GenericPathLineProps } from 'components/line';
 import { pathToBezierSpline3, pathToBezierSpline2 } from 'spline';
-import {
-  UserFriendlyError,
-  NoDataError,
-  InformationalError,
-  getIconFromSeverity,
-  // TimerangeOverflowError,
-} from 'errors';
 
 interface Props extends PanelProps<TracerouteMapOptions> {}
 
@@ -106,18 +106,14 @@ export class TracerouteMapPanel extends Component<Props, State> {
       /* prevProps.options.pathSpline !== this.props.options.pathSpline || */
       prevProps.options.longitudeWrapping !== this.props.options.longitudeWrapping
     ) {
-      // TODO: recalculate map bounds
-      console.log('recalculate map bounds');
       this.setState({ mapBounds: this.routesToBounds(this.state.routes) });
     }
   }
 
   async updateData(): Promise<void> {
-    console.log('loading');
     this.setState({ indicator: 'loading', series: this.props.data.series });
     try {
       // this.checkTimeRange();
-      console.log(this.props.data);
       const { routes, mapBounds } = await this.processData(this.props.data.series);
       this.setState({ indicator: undefined, routes, mapBounds });
     } catch (error) {
@@ -127,14 +123,12 @@ export class TracerouteMapPanel extends Component<Props, State> {
       } else {
         // TODO: whether to clear data or not?
         this.setState({ indicator: error });
-        // console.log(error instanceof UserFriendlyError, error.cause);
         if (error instanceof UserFriendlyError && error.cause !== undefined) {
           console.error(error.cause);
         } else {
           console.error(error);
         }
       }
-      // console.log(error, error instanceof NoDataError, error instanceof Error, error instanceof UserFriendlyError, "boom");
     }
   }
 
@@ -173,7 +167,6 @@ export class TracerouteMapPanel extends Component<Props, State> {
 
     const routes = await entriesToRoutes(_.zip(entries, geos) as Array<[DataEntry, IPGeo]>);
     const mapBounds = this.routesToBounds(routes);
-    console.log(entries, routes, mapBounds);
     return { routes, mapBounds };
   }
 
@@ -181,7 +174,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
     let pathProcesser = undefined;
     // if (this.props.options.pathSpline === 'animatedSpline') {
     //   pathProcesser = pathToBezierSplinePath2;
-    // }
+    // } // TODO: calculate mapbounds for spline
     let coordProcessor = undefined;
     if (this.props.options.longitudeWrapping !== undefined) {
       coordProcessor = this.wrapCoord;
@@ -220,19 +213,14 @@ export class TracerouteMapPanel extends Component<Props, State> {
     return tuples.length ? latLngBounds(tuples) : undefined;
   }
 
-  // toggleHostList() {
-  //   this.setState((prevState) => {
-  //     return { hostListExpanded: !prevState.hostListExpanded };
-  //   });
-  // }
-
   wrapCoord(coord: LatLngTuple): LatLngTuple {
     let [lat, lon] = coord;
     if (this.props.options.longitudeWrapping) {
       if (this.props.options.longitudeWrapping === 'primeMeridian') {
         lon = (lon + 360) % 360;
       } else {
-        // https://gis.stackexchange.com/a/303362/178627
+        // antimeridian
+        // ref: https://gis.stackexchange.com/a/303362/178627
         lon = (((lon % 360) + 540) % 360) - 180;
       }
     }
@@ -240,20 +228,15 @@ export class TracerouteMapPanel extends Component<Props, State> {
   }
 
   getPathLine(): React.ComponentType<GenericPathLineProps> {
-    // console.log(this.props.options.pathSpline);
-    console.log(this.props.options.pathSpline, this.props.options.pathLineStyle);
     if (this.props.options.pathSpline === 'spline2' || this.props.options.pathSpline === 'spline1') {
       const splineFn = this.props.options.pathSpline === 'spline2' ? pathToBezierSpline2 : pathToBezierSpline3;
       switch (this.props.options.pathLineStyle) {
         case 'dashed':
-          console.log(1, splineFn);
           return (props: GenericPathLineProps) => <SimpleSpline splineFn={splineFn} animated={true} {...props} />;
         case 'antPath':
-          console.log(2, splineFn);
           return (props: GenericPathLineProps) => <AntSpline splineFn={splineFn} {...props} />;
         case 'solid':
         default:
-          console.log(3, splineFn);
           // A default catch is useful for panel upgration where value type might change
           return (props: GenericPathLineProps) => <SimpleSpline splineFn={splineFn} {...props} />;
       }
@@ -273,7 +256,6 @@ export class TracerouteMapPanel extends Component<Props, State> {
       <PointPopup {...props} hopLabel={options.hopLabelType} showSearchIcon={options.showSearchIconInHopLabel} />
     );
     const PathLine = this.getPathLine();
-    console.log(PathLine);
 
     return (
       <LMap
@@ -347,7 +329,6 @@ const FunctionButtons: React.FC<{ handleFit: (event: MouseEvent) => void }> = ({
 );
 
 const StatusIndicator: React.FC<{ status: Indicator }> = ({ status }) => {
-  // console.log(status, status instanceof UserFriendlyError, status instanceof NoDataError);
   if (status === 'loading') {
     return (
       <Tooltip content="It may take a while to load, mainly due to Geo IP resolution" theme="info">
@@ -386,44 +367,4 @@ const StatusIndicator: React.FC<{ status: Indicator }> = ({ status }) => {
       </Tooltip>
     );
   }
-
-  // <Control position="topright">
-  //   {(() => {
-  //     switch (status) {
-  //       case 'loading':
-  //         return (
-  //           <Tooltip content="It may take a while to load, mainly due to Geo IP resolution" theme="info">
-  //             <span className="map-indicator loading">
-  //               {/* <Spinner /> */}
-  //               <i className="fa fa-spinner fa-spin" />
-  //             Loading
-  //           </span>
-  //           </Tooltip>
-  //         );
-  //       case 'noData':
-  //         return (
-  //           <Tooltip content="Data schema is valid while entries are empty" theme="info">
-  //             <span className="map-indicator nodata">
-  //               <i className="fa fa-info-circle" />
-  //             Loading
-  //           </span>
-  //           </Tooltip>
-  //         );
-  //       case 'error':
-  //     }
-  //   })()}
-  // </Control>
 };
-
-// function tracePrototypeChainOf(object: any): any {
-
-//   var proto = object.constructor.prototype;
-//   var result = '';
-
-//   while (proto) {
-//       result += ' -> ' + proto.constructor.name;
-//       proto = Object.getPrototypeOf(proto)
-//   }
-
-//   return result;
-// }

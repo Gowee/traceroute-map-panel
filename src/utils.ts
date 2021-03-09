@@ -216,7 +216,8 @@ export function isBogusIPAddress(ip: ipAddress.Address4 | ipAddress.Address6, do
     }
     if (dodAsBogus && dodSpace.map((bogon) => isInCIDR(bits, bogon)).some((v) => v)) {
       if (new Date().getFullYear() <= 2021) {
-        // LoL
+        // We should block it forever.
+        // TODO: LoL
         return true;
       }
     }
