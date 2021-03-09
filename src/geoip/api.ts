@@ -3,6 +3,7 @@
 ///* eslint-disable @typescript-eslint/interface-name-prefix */
 ///* eslint-disable @typescript-eslint/naming-convention */
 
+import { GeoIPResolutionError, SignificantError, UserFriendlyError } from 'errors';
 import { PACKAGE, isValidIPAddress, regionJoin, orgJoin, eliminatePrefixOrSuffix } from '../utils';
 
 // candidante cache providers:
@@ -153,7 +154,16 @@ export class IP2Geo {
       if (isValidIPAddress(ip)) {
         let geo = noCache ? undefined : (Cache.get(ip) as IPGeo);
         if (geo === undefined) {
-          geo = await fn(ip);
+          try {
+            geo = await fn(ip);
+          }
+          catch (error) {
+            if (!(error instanceof UserFriendlyError)) {
+              throw new GeoIPResolutionError("The error has been logged in the Debugging Console: " + error.toString(), error);
+            } else {
+              throw error
+            }
+          }
           Cache.set(ip, geo);
         }
         return geo;
@@ -199,7 +209,7 @@ export class IP2Geo {
       throw new Error(`IPData.co: ${d.message}`);
     }
     const { country_name, region, city, latitude, longitude, asn: network } = d;
-    const regionFull = regionJoin(country_name, region, city);
+    const regionFull = regionJoin(city, region, country_name);
     const label = [network?.asn, network?.name].filter((value) => value).join(' ');
     return { region: regionFull, label: label, lon: longitude, lat: latitude };
   }
@@ -233,11 +243,11 @@ export class IP2Geo {
     const lat = location?.latitude;
     const lon = location?.longitude;
     const organisation = network?.organisation;
-    const asn = network?.carriers[0]?.asn;
+    const asn = network?.carriers?.[0]?.asn;
     console.log(city, state_or_province, country_name);
     const region = regionJoin(city, state_or_province, country_name);
     const label = eliminatePrefixOrSuffix(organisation, asn).join(' via ');
-    console.log(network, network?.carriers[0], organisation, asn, label);
+    console.log(network, network?.carriers?.[0], organisation, asn, label);
     return { region, label, lon, lat };
   }
 

@@ -55,7 +55,7 @@
     "react-leaflet": "^2.6.3",
     "react-leaflet-ant-path": "^1.1.0",
     "react-leaflet-control": "^2.1.2",
-    "react-leaflet-curve": "^2.0.1",
+    "react-leaflet-curve": "file:vendor/react-leaflet-curve/",
     "react-leaflet-markercluster": "^2.0.0",
     "ts-custom-error": "^3.2.0",
     "tslib": "^2.1.0"

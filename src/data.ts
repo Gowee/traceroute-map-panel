@@ -30,8 +30,8 @@ export interface RoutePoint {
 export function seriesToEntries(series: DataFrame[]): DataEntry[] {
   // TODO: how to make this function generic?
   let entries: DataEntry[] = [];
-  for (const frame of series) {
-    entries = entries.concat(dataFrameToEntriesUnsorted(frame));
+  for (const [idx, frame] of series.entries()) {
+    entries = entries.concat(dataFrameToEntriesUnsorted(frame, idx));
   }
   entries.sort((a, b) => a[2] - b[2]);
   return entries;
@@ -43,7 +43,7 @@ export function seriesToEntries(series: DataFrame[]): DataEntry[] {
  * @param frame The raw data frame to be processed. It is expected to inlude the expected fields.
  * @return Entries of fields.
  */
-export function dataFrameToEntriesUnsorted(frame: DataFrame): DataEntry[] {
+export function dataFrameToEntriesUnsorted(frame: DataFrame, idx: number): DataEntry[] {
   // TODO: full iterator
   let fields: any = {};
   ['host', 'dest', 'hop', 'ip', 'rtt', 'loss'].forEach((item) => (fields[item] = null));
@@ -61,10 +61,10 @@ export function dataFrameToEntriesUnsorted(frame: DataFrame): DataEntry[] {
       .map(([key, _value]) => key);
     let message;
     if (missingFields.length === 6) {
-      if (frame.fields.map((field) => field.name).includes('time')) {
-        message = 'Is the data formatted as table when querying InfluxDB?';
+      if (frame.fields.map((field) => field.name).includes('Time')) {
+        message = 'All fields are missing. Is the data formatted as table when querying InfluxDB?';
       } else {
-        message = 'All expected fields are missing.';
+        message = `All expected fields are missing from the series ${typeof idx === 'number' ? idx : ''}`;
       }
     } else {
       message = 'Field(s) are missing from the data: ' + missingFields.join(', ');

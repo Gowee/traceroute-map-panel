@@ -38,14 +38,14 @@ import {
 import HostTray from './components/HostTray';
 import RoutePath from './components/RoutePath';
 import PointPopup, { GenericPointPopupProps } from 'components/PointPopup';
-import AntSpline, { GenericPathLineProps } from 'components/AntSpline';
+import { AntSpline, SimpleSpline, GenericPathLineProps } from 'components/line';
 import { pathToBezierSpline3, pathToBezierSpline2 } from 'spline';
 import {
   UserFriendlyError,
   NoDataError,
   InformationalError,
   getIconFromSeverity,
-  TimerangeOverflowError,
+  // TimerangeOverflowError,
 } from 'errors';
 
 interface Props extends PanelProps<TracerouteMapOptions> {}
@@ -117,8 +117,8 @@ export class TracerouteMapPanel extends Component<Props, State> {
     this.setState({ indicator: 'loading', series: this.props.data.series });
     try {
       // this.checkTimeRange();
-      const { routes, mapBounds } = await this.processData(this.props.data.series);
       console.log(this.props.data);
+      const { routes, mapBounds } = await this.processData(this.props.data.series);
       this.setState({ indicator: undefined, routes, mapBounds });
     } catch (error) {
       if (error instanceof InformationalError) {
@@ -127,7 +127,12 @@ export class TracerouteMapPanel extends Component<Props, State> {
       } else {
         // TODO: whether to clear data or not?
         this.setState({ indicator: error });
-        console.error(error);
+        // console.log(error instanceof UserFriendlyError, error.cause);
+        if (error instanceof UserFriendlyError && error.cause !== undefined) {
+          console.error(error.cause);
+        } else {
+          console.error(error);
+        }
       }
       // console.log(error, error instanceof NoDataError, error instanceof Error, error instanceof UserFriendlyError, "boom");
     }
@@ -235,16 +240,25 @@ export class TracerouteMapPanel extends Component<Props, State> {
   }
 
   getPathLine(): React.ComponentType<GenericPathLineProps> {
-    console.log(this.props.options.pathSpline);
-    switch (this.props.options.pathSpline) {
-      case 'spline1':
-        return (props: GenericPathLineProps) => <AntSpline splineFn={pathToBezierSpline3} {...props} />;
-      case 'spline2':
-        return (props: GenericPathLineProps) => <AntSpline splineFn={pathToBezierSpline2} {...props} />;
-      case undefined:
-      default:
-        // A default catch is useful for panel upgration where value type might change
-        return Polyline as any;
+    // console.log(this.props.options.pathSpline);
+    console.log(this.props.options.pathSpline, this.props.options.pathLineStyle);
+    if (this.props.options.pathSpline === 'spline2' || this.props.options.pathSpline === 'spline1') {
+      const splineFn = this.props.options.pathSpline === 'spline2' ? pathToBezierSpline2 : pathToBezierSpline3;
+      switch (this.props.options.pathLineStyle) {
+        case 'dashed':
+          console.log(1, splineFn);
+          return (props: GenericPathLineProps) => <SimpleSpline splineFn={splineFn} animated={true} {...props} />;
+        case 'antPath':
+          console.log(2, splineFn);
+          return (props: GenericPathLineProps) => <AntSpline splineFn={splineFn} {...props} />;
+        case 'solid':
+        default:
+          console.log(3, splineFn);
+          // A default catch is useful for panel upgration where value type might change
+          return (props: GenericPathLineProps) => <SimpleSpline splineFn={splineFn} {...props} />;
+      }
+    } else {
+      return Polyline as any;
     }
   }
 
@@ -259,6 +273,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
       <PointPopup {...props} hopLabel={options.hopLabelType} showSearchIcon={options.showSearchIconInHopLabel} />
     );
     const PathLine = this.getPathLine();
+    console.log(PathLine);
 
     return (
       <LMap
@@ -281,25 +296,24 @@ export class TracerouteMapPanel extends Component<Props, State> {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="http://osm.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
         />
-        <MarkerClusterGroup maxClusterRadius={options.mapClusterRadius} /*options={{ singleMarkerMode: true }}*/>
-          {Array.from(routes.entries()).map(([key, points]) => {
-            const [host, dest] = key.split('|');
-            return (
-              !this.state.hiddenHosts.has(key) && (
-                <RoutePath
-                  key={key}
-                  dest={dest}
-                  host={host}
-                  points={points}
-                  color={palette()}
-                  Popup={Popup}
-                  PathLine={PathLine}
-                  coordWrapper={this.wrapCoord}
-                />
-              )
-            );
-          })}
-        </MarkerClusterGroup>
+        {Array.from(routes.entries()).map(([key, points]) => {
+          const [host, dest] = key.split('|');
+          const color = palette(); // The palette has side effect. Call it even though a item is hidden;
+          return (
+            !this.state.hiddenHosts.has(key) && (
+              <RoutePath
+                key={key}
+                dest={dest}
+                host={host}
+                points={points}
+                color={color}
+                Popup={Popup}
+                PathLine={PathLine}
+                coordWrapper={this.wrapCoord}
+              />
+            )
+          );
+        })}
         {effectiveBounds && (
           <Polyline positions={[effectiveBounds.getNorthEast() as any, effectiveBounds.getSouthWest() as any]} />
         )}
@@ -333,7 +347,7 @@ const FunctionButtons: React.FC<{ handleFit: (event: MouseEvent) => void }> = ({
 );
 
 const StatusIndicator: React.FC<{ status: Indicator }> = ({ status }) => {
-  console.log(status, status instanceof UserFriendlyError, status instanceof NoDataError);
+  // console.log(status, status instanceof UserFriendlyError, status instanceof NoDataError);
   if (status === 'loading') {
     return (
       <Tooltip content="It may take a while to load, mainly due to Geo IP resolution" theme="info">

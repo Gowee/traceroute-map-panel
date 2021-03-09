@@ -19,6 +19,7 @@ export interface TracerouteMapOptions {
   showSearchIconInHopLabel: boolean;
   bogonFilteringSpace: undefined | 'bogon' | 'extendedBogon';
   pathSpline: undefined | 'spline1' | 'spline2';
+  pathLineStyle: 'solid' | 'dashed' | 'antPath';
   // disableTimeRangeLimit: boolean;
 }
 
@@ -113,6 +114,24 @@ export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<Traceroute
           },
         ],
       },
+    })
+    .addRadio({
+      path: 'pathLineStyle',
+      name: 'Path Line Style 🆕',
+      description: 'Apply styles to traceroute paths',
+      defaultValue: 'solid',
+      settings: {
+        options: [
+          { label: 'Solid', value: 'solid', description: 'Solid line' },
+          { label: 'Dashed', value: 'dashed', description: 'Dashed line with animation' },
+          {
+            label: 'Ant Path',
+            value: 'antPath',
+            description: 'Ant Path with animation',
+          },
+        ],
+      },
+      showIf: (currentOptions) => currentOptions.pathSpline !== undefined,
     })
     // .addBooleanSwitch({
     //   path: 'disableTimeRangeLimit',

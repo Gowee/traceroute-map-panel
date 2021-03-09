@@ -10606,10 +10606,8 @@ react-leaflet-control@^2.1.2:
   resolved "https://registry.yarnpkg.com/react-leaflet-control/-/react-leaflet-control-2.1.2.tgz#c716c5c1797375e4fd941c9e2e0c148bc34edbb0"
   integrity sha512-xdheoLuLEeDGZ6/FKsnKjMYxC9BlyxsK5L5S27Dd6Z+FYP4jIa1Ekhu7UDgTV7GGSw+Yjjf8uofoheylxggB6w==
 
-react-leaflet-curve@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/react-leaflet-curve/-/react-leaflet-curve-2.0.1.tgz#70cd7f8cddcd116930a8f106c0bc3da73ec42f99"
-  integrity sha512-bQBhwsBTSkrI49+sLPCQvTBcYKcGzI/mTm1tfxR34ebq2sKjt56VVldZafze+/cAiJSjKMRtvJu1LHxqTDinqw==
+"react-leaflet-curve@file:vendor/react-leaflet-curve/":
+  version "2.0.0"
 
 react-leaflet-markercluster@^2.0.0:
   version "2.0.0"

@@ -3,6 +3,7 @@ import React from 'react';
 import { Popup } from '../react-leaflet-compat';
 import { Icon } from '@grafana/ui';
 
+import { round } from 'utils';
 import { RoutePoint } from '../data';
 import { HopLabelType } from '../options';
 
@@ -36,7 +37,10 @@ const PointPopup: React.FC<PointPopupProps> = ({ host, dest, point, color, hopLa
           <li
             className="hop-entry"
             key={hop.nth}
-            title={`${hop.ip} (${hop.label ?? 'No network info available'}) RTT:${hop.rtt} Loss:${hop.loss}`}
+            title={`${hop.ip} (${hop.label ?? 'No network info available'}) RTT:${round(hop.rtt, 2)} Loss:${round(
+              hop.loss,
+              2
+            )}`}
           >
             <span className="hop-nth">{hop.nth}.</span>{' '}
             <span className="hop-detail">
@@ -57,11 +61,15 @@ const PointPopup: React.FC<PointPopupProps> = ({ host, dest, point, color, hopLa
       </ul>
       <hr />
       <div className="host-dest-label">
-        <span className="host-label">{host}</span>
+        <span className="host-label" title={host}>
+          {host}
+        </span>
         <span className="host-arrow" style={{ color }}>
           &nbsp; ➜ &nbsp;
         </span>
-        <span className="dest-label">{dest}</span>
+        <span className="dest-label" title={host}>
+          {dest}
+        </span>
       </div>
     </Popup>
   );

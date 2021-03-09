@@ -32,6 +32,7 @@ import {
   BigDataCloud,
 } from './api';
 import { CodeSnippets, timeout } from '../utils';
+import { UserFriendlyError } from 'errors';
 
 const TEST_IP = '1.2.4.8';
 
@@ -106,6 +107,9 @@ export default class GeoIPProvidersEditor extends PureComponent<Props, State> {
       const ip2geo = IP2Geo.fromProvider(provider);
       geo = await timeout(ip2geo(TEST_IP, true), 8000);
     } catch (e) {
+      if (e instanceof UserFriendlyError) {
+        e = e.cause;
+      }
       console.error(e);
       error = e;
     }
