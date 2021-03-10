@@ -1,6 +1,6 @@
 /* eslint-disable react/jsx-no-target-blank */
 
-import React, { Component, createRef, MouseEvent, useState } from 'react';
+import React, { Component, createRef, MouseEvent } from 'react';
 import { PanelProps, LoadingState, DataFrame } from '@grafana/data';
 import { Icon, Button, Tooltip, Spinner, Alert, IconName } from '@grafana/ui';
 // import { keys } from 'ts-transformer-keys';
@@ -78,7 +78,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
       hostListExpanded: true,
       indicator: 'loading',
     };
-    this.updateData();
+    this.updateData(true);
     this.handleFit = this.handleFit.bind(this);
     this.wrapCoord = this.wrapCoord.bind(this);
     this.toggleHostItem = this.toggleHostItem.bind(this);
@@ -110,24 +110,24 @@ export class TracerouteMapPanel extends Component<Props, State> {
     }
   }
 
-  async updateData(): Promise<void> {
-    this.setState({ indicator: 'loading', series: this.props.data.series });
+  async updateData(initial = false): Promise<void> {
+    initial || this.setState({ indicator: 'loading', series: this.props.data.series });
     try {
       // this.checkTimeRange();
       const { routes, mapBounds } = await this.processData(this.props.data.series);
       this.setState({ indicator: undefined, routes, mapBounds });
     } catch (error) {
       if (error instanceof InformationalError) {
-        this.setState({ indicator: error, routes: new Map(), mapBounds: new Map() });
         console.log(error);
+        this.setState({ indicator: error, routes: new Map(), mapBounds: new Map() });
       } else {
-        // TODO: whether to clear data or not?
-        this.setState({ indicator: error });
         if (error instanceof UserFriendlyError && error.cause !== undefined) {
           console.error(error.cause);
         } else {
           console.error(error);
         }
+        // TODO: whether to clear data or not?
+        this.setState({ indicator: error });
       }
     }
   }
@@ -232,9 +232,18 @@ export class TracerouteMapPanel extends Component<Props, State> {
       const splineFn = this.props.options.pathSpline === 'spline2' ? pathToBezierSpline2 : pathToBezierSpline3;
       switch (this.props.options.pathLineStyle) {
         case 'dashed':
-          return (props: GenericPathLineProps) => <SimpleSpline splineFn={splineFn} animated={true} {...props} />;
+          return (props: GenericPathLineProps) => (
+            <SimpleSpline
+              splineFn={splineFn}
+              animated={true}
+              speedFactor={this.props.options.pathAnimationSpeedFactor}
+              {...props}
+            />
+          );
         case 'antPath':
-          return (props: GenericPathLineProps) => <AntSpline splineFn={splineFn} {...props} />;
+          return (props: GenericPathLineProps) => (
+            <AntSpline splineFn={splineFn} speedFactor={this.props.options.pathAnimationSpeedFactor} {...props} />
+          );
         case 'solid':
         default:
           // A default catch is useful for panel upgration where value type might change
@@ -256,6 +265,8 @@ export class TracerouteMapPanel extends Component<Props, State> {
       <PointPopup {...props} hopLabel={options.hopLabelType} showSearchIcon={options.showSearchIconInHopLabel} />
     );
     const PathLine = this.getPathLine();
+    const MarkersWrapper: typeof MarkerClusterGroup =
+      options.mapClusterRadius > 0 ? MarkerClusterGroup : (React.Fragment as any);
 
     return (
       <LMap
@@ -278,27 +289,30 @@ export class TracerouteMapPanel extends Component<Props, State> {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="http://osm.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
         />
-        {Array.from(routes.entries()).map(([key, points]) => {
-          const [host, dest] = key.split('|');
-          const color = palette(); // The palette has side effect. Call it even though a item is hidden;
-          return (
-            !this.state.hiddenHosts.has(key) && (
-              <RoutePath
-                key={key}
-                dest={dest}
-                host={host}
-                points={points}
-                color={color}
-                Popup={Popup}
-                PathLine={PathLine}
-                coordWrapper={this.wrapCoord}
-              />
-            )
-          );
-        })}
-        {effectiveBounds && (
+
+        <MarkersWrapper maxClusterRadius={options.mapClusterRadius} /*options={{ singleMarkerMode: true }}*/>
+          {Array.from(routes.entries()).map(([key, points]) => {
+            const [host, dest] = key.split('|');
+            const color = palette(); // The palette has side effect. Call it even though a item is hidden;
+            return (
+              !this.state.hiddenHosts.has(key) && (
+                <RoutePath
+                  key={key}
+                  dest={dest}
+                  host={host}
+                  points={points}
+                  color={color}
+                  Popup={Popup}
+                  PathLine={PathLine}
+                  coordWrapper={this.wrapCoord}
+                />
+              )
+            );
+          })}
+        </MarkersWrapper>
+        {/* {effectiveBounds && (
           <Polyline positions={[effectiveBounds.getNorthEast() as any, effectiveBounds.getSouthWest() as any]} />
-        )}
+        )} */}
         <Control position="bottomleft">
           <HostTray
             expanded={true}

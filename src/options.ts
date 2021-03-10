@@ -20,6 +20,7 @@ export interface TracerouteMapOptions {
   bogonFilteringSpace: undefined | 'bogon' | 'extendedBogon';
   pathSpline: undefined | 'spline1' | 'spline2';
   pathLineStyle: 'solid' | 'dashed' | 'antPath';
+  pathAnimationSpeedFactor: number;
   // disableTimeRangeLimit: boolean;
 }
 
@@ -132,6 +133,19 @@ export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<Traceroute
         ],
       },
       showIf: (currentOptions) => currentOptions.pathSpline !== undefined,
+    })
+    .addSliderInput({
+      path: 'pathAnimationSpeedFactor',
+      name: 'Animation Speed Factor',
+      description: 'Used to control the speed of line animations',
+      defaultValue: 1,
+      settings: {
+        min: 0.2,
+        max: 5,
+        step: 0.1,
+      },
+      showIf: (currentOptions) =>
+        currentOptions.pathSpline !== undefined && ['dashed', 'antPath'].includes(currentOptions.pathLineStyle),
     })
     // .addBooleanSwitch({
     //   path: 'disableTimeRangeLimit',

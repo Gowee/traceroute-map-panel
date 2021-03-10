@@ -58,6 +58,16 @@ export class GeoIPResolutionError extends SignificantError {
   shortMessage = 'Error when querying GeoIP';
 }
 
+export class AssertionError extends SignificantError {
+  shortMessage = 'Assertion failed';
+}
+
+export function assert(condition: any, message?: string) {
+  if (!Boolean(condition)) {
+    throw new AssertionError(message ?? 'No further details attached.');
+  }
+}
+
 // export class TimerangeOverflowError extends SignificantError {
 //   shortMessage = 'Time Range Too Large'
 // }

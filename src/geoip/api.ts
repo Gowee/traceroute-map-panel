@@ -3,7 +3,7 @@
 ///* eslint-disable @typescript-eslint/interface-name-prefix */
 ///* eslint-disable @typescript-eslint/naming-convention */
 
-import { GeoIPResolutionError, UserFriendlyError } from 'errors';
+import { GeoIPResolutionError, SignificantError, UserFriendlyError } from 'errors';
 import { PACKAGE, isValidIPAddress, regionJoin, orgJoin, eliminatePrefixOrSuffix } from '../utils';
 
 // candidante cache providers:
@@ -143,6 +143,8 @@ export class IP2Geo {
         fn = undefined as any; // Fix "Variable 'fn' is used before being assigned.""
         // eslint-disable-next-line no-eval
         eval(`fn = ${provider.code}`);
+      default:
+        throw new SignificantError("GeoIP provider option is unrecognized.");
     }
     // TODO: sanitize API query result
 

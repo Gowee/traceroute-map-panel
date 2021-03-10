@@ -1,5 +1,7 @@
 import bezierSpline from '@freder/bezier-spline';
 import BezierSpline from 'bezier-spline';
+import { assert } from 'errors';
+import { LatLngTuple } from 'react-leaflet-compat';
 
 type Point = [number, number];
 
@@ -197,4 +199,46 @@ export function pathToBezierSpline3(latLons: Array<[number, number]>, smoothing 
   };
 
   return curvePath(latLons, bezierCommand);
+}
+
+/**
+ * Estimate a path's approximate length.
+ *
+ * @param path Path command sequnce. e.g. ['M', [0, 0], 'C', [1,1], [2, 1], [3, 0], ...]
+ * @returns Estimated length.
+ */
+export function estimatePathLength(path: any): number {
+  function pointDistance(a: LatLngTuple, b: LatLngTuple): number {
+    return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2));
+  }
+
+  if (path.length === 0) {
+    return 0;
+  }
+  assert(path[0] === 'M', 'The path command sequence is invalid');
+  let len = 0;
+  let last: LatLngTuple = path[1];
+  for (let i = 2; i < path.length; i++) {
+    if (path[i] === 'M') {
+      len += pointDistance(last, path[++i]);
+    } else if (path[i] === 'C') {
+      const c1: LatLngTuple = path[++i];
+      const c2: LatLngTuple = path[++i];
+      const next: LatLngTuple = path[++i];
+      // Simple estimation: https://stackoverflow.com/a/37862545/5488616
+      len +=
+        [
+          [last, next],
+          [last, c1],
+          [c1, c2],
+          [c2, next],
+        ]
+          .map(([a, b]) => pointDistance(a, b))
+          .reduce((p, x) => p + x, 0) / 2;
+      last = next;
+    } else {
+      assert('Unsupported path command when estimating path length');
+    }
+  }
+  return len;
 }
