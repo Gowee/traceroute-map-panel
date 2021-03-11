@@ -1,6 +1,6 @@
 import bezierSpline from '@freder/bezier-spline';
 import BezierSpline from 'bezier-spline';
-import { assert } from 'errors';
+import { assert } from './errors';
 import { LatLngTuple } from 'react-leaflet-compat';
 
 type Point = [number, number];

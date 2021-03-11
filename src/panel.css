@@ -199,10 +199,3 @@ a.decorated {
     justify-content: space-between;
     flex-grow: 1;
 }
-
-.leaflet-ant-path {
-    /* The animation-duration CSS property of AntPath inside MarkerClusterGroup is not set,
-        due to unknown reasons. Just patch it anyway. */
-    animation-duration: 90s !important;
-    /* TODO: too dirty now */
-}

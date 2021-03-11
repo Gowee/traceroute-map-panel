@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 - Try to treat source hosts as "zeroth" hops by resolving their hostnames as IPs. It would be useful when tunnels exist.
 - Improve the UI and content of point popups.
 - Improve error indicator. For example, now empty data won't trigger red error warning.
-TODO: curve speed, cluster marker, doh resolution, ipv6
+TODO: ~~~~curve speed~~~~, ~~~~cluster marker?~~~~, ~~~~doh resolution?~~~~, ~~~~ipv6~~~~
 
 ## 0.2.x
 ...

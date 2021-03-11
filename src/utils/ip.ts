@@ -5,12 +5,16 @@ import ipAddress from 'ip-address';
 export function parseIPAddress(ip: string): ipAddress.Address4 | ipAddress.Address6 | undefined {
   try {
     const ipv4 = new ipAddress.Address4(ip);
-    return ipv4.valid ? ipv4 : undefined;
+    if (ipv4.valid) {
+      return ipv4;
+    }
   } catch (_e) {}
-
+  console.log(ip);
   try {
     const ipv6 = new ipAddress.Address6(ip);
-    return ipv6.valid ? ipv6 : undefined;
+    if (ipv6.valid) {
+      return ipv6;
+    }
   } catch (_e) {}
 
   return undefined;

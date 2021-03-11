@@ -4,7 +4,7 @@ import { latLngBounds, LatLngTuple } from './react-leaflet-compat';
 
 import { round, Throttler, resolveHostname, parseIntChecked } from './utils';
 import { IPGeo } from './geoip/api';
-import { InvalidSchemaError } from 'errors';
+import { InvalidSchemaError } from './errors';
 
 export type DataEntry = [string, string, number, string, number, number];
 

@@ -23,7 +23,7 @@ import {
   InformationalError,
   getIconFromSeverity,
   // TimerangeOverflowError,
-} from 'errors';
+} from './errors';
 import { TracerouteMapOptions } from './options';
 import { IP2Geo, IPGeo } from './geoip/api';
 import {
@@ -147,6 +147,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
       ? makeThrottler<string, unknown[], IPGeo>(options.concurrentRequests, options.requestsPerSecond)
       : undefined;
     const ip2geo = IP2Geo.fromProvider(options.geoIPProviders[options.geoIPProviders.active], geoIPThrottler);
+    // TODO: sychronize throttler among multiple panels
 
     if (options.srcHostAsZerothHop) {
       // No option of parallelization for DoH resolution so far. Just hardcode for now.

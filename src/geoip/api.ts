@@ -3,7 +3,7 @@
 ///* eslint-disable @typescript-eslint/interface-name-prefix */
 ///* eslint-disable @typescript-eslint/naming-convention */
 
-import { GeoIPResolutionError, SignificantError, UserFriendlyError } from 'errors';
+import { GeoIPResolutionError, SignificantError, UserFriendlyError } from '../errors';
 import { PACKAGE, isValidIPAddress, regionJoin, orgJoin, eliminatePrefixOrSuffix } from '../utils';
 
 // candidante cache providers:

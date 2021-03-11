@@ -32,9 +32,10 @@ import {
   BigDataCloud,
 } from './api';
 import { CodeSnippets, timeout } from '../utils';
-import { UserFriendlyError } from 'errors';
+import { UserFriendlyError } from '../errors';
 
-const TEST_IP = '1.2.4.8';
+const TEST_IPv4 = '1.2.4.8';
+const TEST_IPv6 = '2001:4860:4860::8888';
 
 export interface GeoIPProvidersOption {
   active: GeoIPProviderKind;
@@ -101,28 +102,42 @@ export default class GeoIPProvidersEditor extends PureComponent<Props, State> {
 
     const provider = this.state.currentProvider;
     this.setState({ test: { status: 'pending' } });
-    let geo;
-    let error;
-    try {
-      const ip2geo = IP2Geo.fromProvider(provider);
-      geo = await timeout(ip2geo(TEST_IP, true), 8000);
-    } catch (e) {
-      if (e instanceof UserFriendlyError) {
-        e = e.cause;
-      }
-      console.error(e);
-      error = e;
+    let [resultv4, resultv6] = await Promise.all(
+      [TEST_IPv4, TEST_IPv6].map(async (ip) => {
+        try {
+          const ip2geo = IP2Geo.fromProvider(provider);
+          return await timeout(ip2geo(ip, true), 8000);
+        } catch (e) {
+          if (e instanceof UserFriendlyError && e.cause) {
+            e = e.cause;
+          }
+          console.error(e);
+          return e;
+        }
+      })
+    );
+    let ok = !(resultv4 instanceof Error && resultv6 instanceof Error);
+    let message = [
+      [resultv4, TEST_IPv4],
+      [resultv6, TEST_IPv6],
+    ]
+      .map(
+        ([result, ip]) =>
+          `// Result for ${ip} :\n` +
+          (result instanceof Error ? result.toString() ?? result.stack : JSON.stringify(result, null, 2))
+      )
+      .join('\n\n');
+    if (!ok && ['Failed to fetch', 'NetworkError'].some((keyword) => message.includes(keyword))) {
+      message +=
+        '\n\n// Note: For network error, the cause might be improper CORS header or ad-blocking browser extension.';
     }
     this.setState({
       test: {
-        status: error ? 'failed' : 'ok',
-        output: error
-          ? (error.toString() || error.stack.toString()) +
-            '\n\n// For network error, the cause might be improper CORS header or ad blocker.'
-          : `// Query result for ${TEST_IP}:\n` + JSON.stringify(geo, null, 4),
+        status: ok ? 'ok' : 'failed',
+        output: message,
       },
     });
-    if (!error) {
+    if (ok) {
       // Unlike other ordinary built-in options input, value (providers) of GeoIPProvidersEditor
       // are not updated until test is ok. Changes of choices of <Select> and content of text
       // input are only internal states of the compontent.
