@@ -32,7 +32,7 @@ import {
   BigDataCloud,
 } from './api';
 import { CodeSnippets, timeout } from '../utils';
-import { UserFriendlyError } from '../errors';
+import { SignificantError, UserFriendlyError } from '../errors';
 
 const TEST_IPv4 = '1.2.4.8';
 const TEST_IPv6 = '2001:4860:4860::8888';
@@ -102,11 +102,18 @@ export default class GeoIPProvidersEditor extends PureComponent<Props, State> {
 
     const provider = this.state.currentProvider;
     this.setState({ test: { status: 'pending' } });
+    // TODO: rewrite to improve readability with Promise.allSettled
     let [resultv4, resultv6] = await Promise.all(
       [TEST_IPv4, TEST_IPv6].map(async (ip) => {
         try {
           const ip2geo = IP2Geo.fromProvider(provider);
-          return await timeout(ip2geo(ip, true), 8000);
+          const geo = await timeout(ip2geo(ip, true), 8000);
+          if (!((geo?.lat === undefined || typeof geo?.lat === 'number')  && (geo?.lon === undefined || typeof geo?.lon === 'number'))) {
+            // The validation is mainly meant for custom API or function.
+            // All built-in GeoIP providers are expected to return values with right types.
+            throw new SignificantError("Either latitude of longitude is not a valid number.");
+          }
+          return geo;
         } catch (e) {
           if (e instanceof UserFriendlyError && e.cause) {
             e = e.cause;
@@ -116,6 +123,7 @@ export default class GeoIPProvidersEditor extends PureComponent<Props, State> {
         }
       })
     );
+    // The API is ok if either result is valid.
     let ok = !(resultv4 instanceof Error && resultv6 instanceof Error);
     let message = [
       [resultv4, TEST_IPv4],

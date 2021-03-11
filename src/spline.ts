@@ -76,8 +76,7 @@ export function pathToBezierSpline1(latLons: Array<[number, number]>): any {
     return ['M', ...latLons];
   }
   const controlPoints = bezierSpline.getControlPoints(latLons);
-  // eslint-disable-next-line no-console
-  console.assert(controlPoints.length === 2 * (latLons.length - 1));
+  assert(controlPoints.length === 2 * (latLons.length - 1));
   const path: any = ['M', latLons[0]];
   let j = 0;
   for (const latLon of latLons.slice(1)) {

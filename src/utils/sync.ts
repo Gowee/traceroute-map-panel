@@ -2,8 +2,10 @@
 
 import { Sema as Semaphore, RateLimit } from 'async-sema';
 
+import { assert } from '../errors';
+
 // https://stackoverflow.com/questions/46946380/fetch-api-request-timeout
-export function timeout(promise: Promise<any>, ms: number) {
+export function timeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise(function (resolve, reject) {
     setTimeout(function () {
       reject(new Error('timeout'));
@@ -55,8 +57,7 @@ export interface Throttler<P0, PN extends any[], R> {
  * @param rps The maximum number of promises (requests) to run per second.
  */
 export function makeThrottler<P0, PN extends any[], R>(concurrent: number, rps: number): Throttler<P0, PN, R> {
-  // eslint-disable-next-line no-console
-  console.assert(concurrent > 0 && rps > 0);
+  assert(concurrent > 0 && rps > 0);
   let sema = new Semaphore(concurrent);
   let limt = RateLimit(rps, { uniformDistribution: true });
 

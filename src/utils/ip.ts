@@ -9,7 +9,6 @@ export function parseIPAddress(ip: string): ipAddress.Address4 | ipAddress.Addre
       return ipv4;
     }
   } catch (_e) {}
-  console.log(ip);
   try {
     const ipv6 = new ipAddress.Address6(ip);
     if (ipv6.valid) {
@@ -29,7 +28,6 @@ function toCIDRPair(ipv4: string): [bigint, number] {
     const range = parseInt(b, 10);
     return [ipv4PartsToBigInt(ip.parsedAddress), range];
   } catch (e) {
-    console.error(e);
     throw e;
   }
 }

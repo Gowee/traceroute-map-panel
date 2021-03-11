@@ -4,7 +4,7 @@
 ///* eslint-disable @typescript-eslint/naming-convention */
 
 import { GeoIPResolutionError, SignificantError, UserFriendlyError } from '../errors';
-import { PACKAGE, isValidIPAddress, regionJoin, orgJoin, eliminatePrefixOrSuffix } from '../utils';
+import { PACKAGE, isValidIPAddress, regionJoin, orgJoin, eliminatePrefixOrSuffix, parseFloatChecked } from '../utils';
 
 // candidante cache providers:
 // SessionStorage
@@ -262,7 +262,21 @@ export class IP2Geo {
     const { country_name, region, city, latitude, longitude, asn, org } = d;
     const regionFull = regionJoin(city, region, country_name);
     const label = [asn, org].filter((value) => value).join(' ');
-    return { region: regionFull, label: label, lon: longitude, lat: latitude };
+    // The free plan IPAPI.co hides location data for some IP ranges, substituing lat/lon with promo message.
+    // So if parseInt returns NaN, convert it to undefined as is specified in type annotations.
+    let lon, lat;
+    try {
+      lon = parseFloatChecked(longitude);
+      lat = parseFloatChecked(latitude);
+    } catch (e) {
+      if (e instanceof TypeError) {
+        lon = undefined;
+        lat = undefined;
+      } else {
+        throw e;
+      }
+    }
+    return { region: regionFull, label: label, lon, lat };
   }
 
   static async GenericAPI(url: string, ip: string): Promise<IPGeo> {

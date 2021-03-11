@@ -69,6 +69,10 @@ export class TracerouteMapPanel extends Component<Props, State> {
 
   constructor(props: Props) {
     super(props);
+    // TODO: When a panel is edited, a ephemeral panel is created by copying the original one, with
+    //       different ID, in the "Edit Panel" page.
+    //       It results in inconsistent hidden host items selected when the panel switches back.
+    //       It seems no No feasible fix for now.
     this.hiddenHostsStorage = new HiddenHostsStorage(this.props.id.toString());
     // this.ip2geo = IP2Geo.fromProvider(this.props.options.geoIPProviders[this.props.options.geoIPProviders.active]);
     this.state = {
@@ -232,7 +236,6 @@ export class TracerouteMapPanel extends Component<Props, State> {
   getPathLine(): React.ComponentType<GenericPathLineProps> {
     if (this.props.options.pathSpline === 'spline2' || this.props.options.pathSpline === 'spline1') {
       const splineFn = this.props.options.pathSpline === 'spline2' ? pathToBezierSpline2 : pathToBezierSpline3;
-      console.log(this.mapRef?.current?.leafletElement?.getZoom());
       switch (this.props.options.pathLineStyle) {
         case 'dashed':
           // Compensate to fix the implementation problem of Curve

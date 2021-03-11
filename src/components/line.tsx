@@ -41,12 +41,10 @@ const SimpleSpline: React.FC<SimpleSplineProps> = ({ positions, color, splineFn:
   const path = useMemo(() => spline(positions), [positions, spline]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const alen = useMemo(() => estimatePathLength(path), [positions, spline]);
-  // console.log(path, alen);
   const animationOptions = animated
     ? { dashArray: '5', animate: { duration: (alen * 70) / (speedFactor ?? 1), iterations: Infinity } }
     : undefined;
-  console.log(animationOptions);
-  // IT IS option INSTEAD OF options!
+  // Here, IT IS option INSTEAD OF options!
   return <Curve positions={path} option={{ color, ...animationOptions }} />;
 };
 
