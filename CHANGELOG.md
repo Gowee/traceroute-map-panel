@@ -8,9 +8,10 @@ All notable changes to this project will be documented in this file.
 - Add an option to enable concurrent GeoIP resolution with rate-limiting.
 - Add an option to filter out IPs in [Bogon Space](https://en.wikipedia.org/wiki/Bogon_Filtering) proactively.
 - Support to draw routes as bezier spline, with several implementations ([1](https://github.com/freder/bezier-spline), [2](https://github.com/Zunawe/bezier-spline), and [3](https://medium.com/@francoisromain/smooth-a-svg-path-with-cubic-bezier-curves-e37b49d46c74))
-- TODO: Improve error message, such as warning for empty data.
 - Try to treat source hosts as "zeroth" hops by resolving their hostnames as IPs. It would be useful when tunnels exist.
 - Improve the UI and content of point popups.
+- Improve error indicator. For example, now empty data won't trigger red error warning.
+TODO: curve speed, cluster marker, doh resolution, ipv6
 
 ## 0.2.x
 ...

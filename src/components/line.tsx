@@ -30,8 +30,9 @@ const SimpleSpline: React.FC<SimpleSplineProps> = ({ positions, color, splineFn:
   const alen = useMemo(() => estimatePathLength(path), [positions, spline]);
   // console.log(path, alen);
   const animationOptions = animated
-    ? { dashArray: '5', animate: { duration: (alen * 400) / (speedFactor ?? 1), iterations: Infinity } }
+    ? { dashArray: '5', animate: { duration: (alen * 70) / (speedFactor ?? 1), iterations: Infinity } }
     : {};
+  console.log(animationOptions);
   // IT IS option INSTEAD OF options!
   return <Curve positions={path} option={{ color, ...animationOptions }} />;
 };
@@ -40,5 +41,3 @@ const AntSplineMemo = React.memo(AntSpline);
 const SimpleSplineMemo = React.memo(SimpleSpline);
 
 export { AntSplineMemo as AntSpline, SimpleSplineMemo as SimpleSpline };
-
-const a = <></>;

@@ -14,6 +14,7 @@ import {
   latLngBounds,
   LatLngBounds,
   Polyline,
+  Curve,
 } from './react-leaflet-compat';
 
 import {
@@ -230,13 +231,16 @@ export class TracerouteMapPanel extends Component<Props, State> {
   getPathLine(): React.ComponentType<GenericPathLineProps> {
     if (this.props.options.pathSpline === 'spline2' || this.props.options.pathSpline === 'spline1') {
       const splineFn = this.props.options.pathSpline === 'spline2' ? pathToBezierSpline2 : pathToBezierSpline3;
+      console.log(this.mapRef?.current?.leafletElement?.getZoom());
       switch (this.props.options.pathLineStyle) {
         case 'dashed':
+          // Compensate to fix the implementation problem of Curve
+          const zoomFix = Math.pow(2, this.mapRef?.current?.leafletElement?.getZoom() ?? 0);
           return (props: GenericPathLineProps) => (
             <SimpleSpline
               splineFn={splineFn}
               animated={true}
-              speedFactor={this.props.options.pathAnimationSpeedFactor}
+              speedFactor={this.props.options.pathAnimationSpeedFactor / zoomFix}
               {...props}
             />
           );
@@ -290,7 +294,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
           attribution='&copy; <a href="http://osm.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
         />
 
-        <MarkersWrapper maxClusterRadius={options.mapClusterRadius} /*options={{ singleMarkerMode: true }}*/>
+        <MarkersWrapper maxClusterRadius={options.mapClusterRadius} options={{ singleMarkerMode: true }}>
           {Array.from(routes.entries()).map(([key, points]) => {
             const [host, dest] = key.split('|');
             const color = palette(); // The palette has side effect. Call it even though a item is hidden;
