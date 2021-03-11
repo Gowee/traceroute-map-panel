@@ -6,7 +6,7 @@ import { Icon, Button, Tooltip, Spinner, Alert, IconName } from '@grafana/ui';
 // import { keys } from 'ts-transformer-keys';
 import _ from 'lodash';
 import {
-  Map as LMap,
+  Map as RLMap,
   TileLayer,
   Control,
   MarkerClusterGroup,
@@ -277,7 +277,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
       options.mapClusterRadius > 0 ? MarkerClusterGroup : (React.Fragment as any);
 
     return (
-      <LMap
+      <RLMap
         key={this.state.series}
         ref={this.mapRef}
         center={[51.505, -0.09]}
@@ -298,7 +298,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
           attribution='&copy; <a href="http://osm.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
         />
 
-        <MarkersWrapper maxClusterRadius={options.mapClusterRadius} options={{ singleMarkerMode: true }}>
+        <MarkersWrapper maxClusterRadius={options.mapClusterRadius}>
           {Array.from(routes.entries()).map(([key, points]) => {
             const [host, dest] = key.split('|');
             const color = palette(); // The palette has side effect. Call it even though a item is hidden;
@@ -338,7 +338,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
             <StatusIndicator status={this.state.indicator} />
           )}
         </Control>
-      </LMap>
+      </RLMap>
     );
   }
 }

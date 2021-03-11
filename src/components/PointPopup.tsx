@@ -3,7 +3,7 @@ import React from 'react';
 import { Popup } from '../react-leaflet-compat';
 import { Icon } from '@grafana/ui';
 
-import { round } from 'utils';
+import { round } from '../utils';
 import { RoutePoint } from '../data';
 import { HopLabelType } from '../options';
 

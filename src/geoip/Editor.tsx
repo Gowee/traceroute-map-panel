@@ -108,10 +108,15 @@ export default class GeoIPProvidersEditor extends PureComponent<Props, State> {
         try {
           const ip2geo = IP2Geo.fromProvider(provider);
           const geo = await timeout(ip2geo(ip, true), 8000);
-          if (!((geo?.lat === undefined || typeof geo?.lat === 'number')  && (geo?.lon === undefined || typeof geo?.lon === 'number'))) {
+          if (
+            !(
+              (geo?.lat === undefined || typeof geo?.lat === 'number') &&
+              (geo?.lon === undefined || typeof geo?.lon === 'number')
+            )
+          ) {
             // The validation is mainly meant for custom API or function.
             // All built-in GeoIP providers are expected to return values with right types.
-            throw new SignificantError("Either latitude of longitude is not a valid number.");
+            throw new SignificantError('Either latitude of longitude is not a valid number.');
           }
           return geo;
         } catch (e) {

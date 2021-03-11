@@ -1,5 +1,5 @@
 import React, { ComponentType, ReactElement } from 'react';
-import { LatLngTuple, Marker } from '../react-leaflet-compat';
+import { LatLngTuple, Marker, Tooltip as RLTooltip } from '../react-leaflet-compat';
 
 import { round } from '../utils';
 import { RoutePoint } from '../data';
@@ -37,6 +37,17 @@ function RoutePath(props: RoutePathProps): ReactElement {
           className="point-marker"
         >
           <Popup host={host} dest={dest} point={point} color={color} />
+          <RLTooltip className="host-dest-tooltip">
+            <span className="host-label" title={host}>
+              {host}
+            </span>
+            <span className="host-arrow" style={{ color }}>
+              &nbsp; ➜ &nbsp;
+            </span>
+            <span className="dest-label" title={host}>
+              {dest}
+            </span>
+          </RLTooltip>
         </Marker>
       ))}
       <PathLine positions={path} color={color} />
