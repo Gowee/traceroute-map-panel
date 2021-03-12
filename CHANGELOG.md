@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Not released yet 0.3.0
+## 0.3.0
 - Refactor the option editor to be compatible with Grafana 7.x API. ([#4](https://github.com/Gowee/traceroute-map-panel/issues/4))
 - Introduce a bunch of new 3rd-party GeoIP APIs.
 - Add an option to enable concurrent GeoIP resolution with rate-limiting.
@@ -11,7 +11,6 @@ All notable changes to this project will be documented in this file.
 - Try to treat source hosts as "zeroth" hops by resolving their hostnames as IPs. It would be useful when tunnels exist.
 - Improve the UI and content of point popups.
 - Improve error indicator. For example, now empty data won't trigger red error warning.
-TODO: ~~~~curve speed~~~~, ~~~~cluster marker?~~~~, ~~~~doh resolution?~~~~, ~~~~ipv6~~~~
 
 ## 0.2.x
 ...
