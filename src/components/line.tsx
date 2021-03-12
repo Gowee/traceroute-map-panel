@@ -23,7 +23,7 @@ const AntSpline: React.FC<SplineProps> = ({ positions, color: colorRGBA, splineF
   const path = useMemo(() => spline(positions), [positions, spline]);
   const duration = 90 / (speedFactor ?? 1);
   // AntPath has stroke-opacity=0.5 set by default. FIX: refactor color palette
-  const color = colorRGBA.replace(", 0.618", "");
+  const color = colorRGBA.replace(', 0.618', '');
   return (
     <AntPath className="us0129039120" positions={path} options={{ use: Lcurve, color, fillOpacity: 1 }}>
       <style>{`
