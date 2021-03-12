@@ -1,0 +1,5 @@
+All APIs are provided for convenience, without affiliations in any way with the [Traceroute Panel Map Panel](https://github.com/Gowee/traceroute-map-panel) plugin. External querying requests are made in the browser with visitors' IPs and User-Agents attached inevitably but no third-party cookies. Some APIs might be even blocked by ad-blocking browser extensions due to concerns about privacy, resuling an error when querying GeoIP. In such cases, it is on users' decisions to stop using or allowlist that API.
+
+Depending on the service provider selected, additional terms of service or privacy policies may apply. Any text in notes does not constitute endorsements of any service providers or guarantees on accuracy, availability, or privacy. By proceeding, the user is at their own risk.
+
+Be careful when sharing the panel or its snapshot publicly, as it implies publicizing API keys saved here even though they are not selected to be active. Therefore, to share a snapshot without leaking API keys, create a new panel from scratch (instead of copying) and choose an API requiring no key.

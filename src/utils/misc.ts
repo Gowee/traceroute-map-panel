@@ -1,5 +1,6 @@
-import ipAddress from 'ip-address';
-export const PACKAGE = require('../package.json');
+// Miscellaneous utils
+
+import { PACKAGE } from './index';
 
 // The following rainbow function is adapted from the one in https://stackoverflow.com/a/7419630/5488616
 export function rainbow(numOfSteps: number, step: number, alpha = 1): string {
@@ -57,16 +58,11 @@ export function rainbowPalette(numOfSteps: number, alpha = 1): () => string {
   return next_color;
 }
 
-export function round(number: number, ndigits: number): number {
-  // https://stackoverflow.com/questions/11832914/round-to-at-most-2-decimal-places-only-if-necessary
-  const factor = 10 ** ndigits;
-  return Math.round((number + Number.EPSILON) * factor) / factor;
-}
-
 export class HiddenHostsStorage {
   ENTRYID: string;
 
   constructor(panelID: string, packageID = PACKAGE.name) {
+    // const panelID = 'common'; // disable standalone cache per panel for now
     this.ENTRYID = `${packageID}-${panelID}-hidden-hosts`;
   }
 
@@ -112,43 +108,16 @@ export class HiddenHostsStorage {
 }
 
 export class CodeSnippets {
-  static ipgeoInterface = `export interface IPGeo {
-    region?: string,
-    label?: string,
-    lat?: number,
-    lon?: number,
-}`;
-
-  static ip2geoSignature = `(ip: string) => Promise<IPGeo>`;
-
   static ip2geoFunction = `async function(ip) {
-    const r = await fetch(\`https://api.ip.sb/geoip/\${ip}\`, { headers: { 'Accept': "application/json" } });
-    const data = await r.json();
-    const { country, latitude, longitude, isp } = data;
-    const geo = { region: country, label: isp, lon: longitude, lat: latitude };
-    return geo;
-}`;
+      const resp = await fetch(\`https://api.ip.sb/geoip/\${ip}\`, { headers: { 'Accept': "application/json" } });
+      const data = await resp.json();
+      const { country, latitude, longitude, isp } = data;
+      return { region: country, label: isp, lon: longitude, lat: latitude };
+  }`;
 }
 
-// https://stackoverflow.com/questions/46946380/fetch-api-request-timeout
-export function timeout(promise: Promise<any>, ms: number) {
-  return new Promise(function(resolve, reject) {
-    setTimeout(function() {
-      reject(new Error('timeout'));
-    }, ms);
-    promise.then(resolve, reject);
-  });
-}
-
-export function isValidIPAddress(ip: string) {
-  const ipv4 = new ipAddress.Address4(ip);
-  const ipv6 = new ipAddress.Address6(ip);
-  return ipv4.valid || ipv6.valid;
-}
-
-export function simplyHostname(hostname: string): string {
-  if (!isValidIPAddress(hostname)) {
-    hostname = hostname.split('.')[0];
-  }
-  return hostname;
+export function constructQueryParams(params: { [key: string]: string }): string {
+  return Object.entries(params)
+    .map(([key, value]) => encodeURIComponent(key) + '=' + encodeURIComponent(value))
+    .join('&');
 }

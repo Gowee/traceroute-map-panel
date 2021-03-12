@@ -14,11 +14,12 @@
       "large": "img/logo.svg"
     },
     "links": [
-      {"name": "Website", "url": "https://github.com/Gowee/traceroute-map-panel"},
-      {"name": "License", "url": "https://github.com/Gowee/traceroute-map-panel/blob/master/LICENSE"}
+      { "name": "Website", "url": "https://github.com/Gowee/traceroute-map-panel" },
+      { "name": "License", "url": "https://github.com/Gowee/traceroute-map-panel/blob/master/LICENSE" }
     ],
     "screenshots": [
-      {"name": "Traceroute Map Panel", "path": "img/screenshot.png"}
+      { "name": "Traceroute Map Panel ployline", "path": "img/screenshot1.png" },
+      { "name": "Traceroute Map Panel spline", "path": "img/screenshot2.png" }
     ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
