@@ -199,3 +199,36 @@ a.decorated {
     justify-content: space-between;
     flex-grow: 1;
 }
+
+.route-tooltip {
+    display: flex;
+    flex-direction: column;
+}
+
+.route-tooltip > * {
+    flex-grow: 1;
+}
+
+.route-tooltip > .hops-abstract {
+    display: flex;
+    justify-content: center;
+}
+
+.route-tooltip > .hops-abstract > .content {
+    max-width: 18em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.route-tooltip > .host-dest-label {
+    display: flex;
+    justify-content: center;
+}
+
+.route-tooltip > .host-dest-label > .host-label, .route-tooltip > .host-dest-label > .dest-label {
+    max-width: 12em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

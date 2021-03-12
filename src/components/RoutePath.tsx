@@ -37,16 +37,25 @@ function RoutePath(props: RoutePathProps): ReactElement {
           className="point-marker"
         >
           <Popup host={host} dest={dest} point={point} color={color} />
-          <RLTooltip className="host-dest-tooltip">
-            <span className="host-label" title={host}>
-              {host}
-            </span>
-            <span className="host-arrow" style={{ color }}>
-              &nbsp; ➜ &nbsp;
-            </span>
-            <span className="dest-label" title={host}>
-              {dest}
-            </span>
+          <RLTooltip>
+            <div className="route-tooltip">
+              <div className="hops-abstract">
+                  <div className="content">
+                    {point.hops.length}<sup>hop{point.hops.length > 1 && "s"}</sup> <i>at</i> <small>{point.region}</small> on
+                  </div>
+              </div>
+              <div className="host-dest-label">
+                <span className="host-label" title={host}>
+                  {host}
+                </span> 
+                <span className="host-arrow" style={{ color }}>
+                  &nbsp; ➜ &nbsp;
+                </span>
+                <span className="dest-label" title={host}>
+                  {dest}
+                </span>
+              </div>
+            </div>
           </RLTooltip>
         </Marker>
       ))}

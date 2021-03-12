@@ -14,7 +14,6 @@ import {
   latLngBounds,
   LatLngBounds,
   Polyline,
-  Curve,
 } from './react-leaflet-compat';
 
 import {

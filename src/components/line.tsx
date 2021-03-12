@@ -19,10 +19,11 @@ export interface SimpleSplineProps extends SplineProps {
   animated?: boolean;
 }
 
-const AntSpline: React.FC<SplineProps> = ({ positions, color, splineFn: spline, speedFactor }) => {
+const AntSpline: React.FC<SplineProps> = ({ positions, color: colorRGBA, splineFn: spline, speedFactor }) => {
   const path = useMemo(() => spline(positions), [positions, spline]);
   const duration = 90 / (speedFactor ?? 1);
-
+  // AntPath has stroke-opacity=0.5 set by default. FIX: refactor color palette
+  const color = colorRGBA.replace(", 0.618", "");
   return (
     <AntPath className="us0129039120" positions={path} options={{ use: Lcurve, color, fillOpacity: 1 }}>
       <style>{`
@@ -32,7 +33,7 @@ const AntSpline: React.FC<SplineProps> = ({ positions, color, splineFn: spline, 
 animation-duration: ${duration}s !important;
 }
   `}</style>
-      {/* TODO: too dirty now; the style won't be applied per component, respectively  */}
+      {/* FIX: too dirty now; the style won't be applied per component respectively  */}
     </AntPath>
   );
 };
