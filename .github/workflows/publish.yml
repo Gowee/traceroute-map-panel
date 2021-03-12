@@ -13,6 +13,14 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: "Prepare git and repo"
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git checkout grafana-release
+        git merge "${GITHUB_REF#refs/heads/}" 
     - uses: actions/setup-node@v1
       with:
         node-version: '12'
@@ -58,6 +66,11 @@ jobs:
         asset_path: /tmp/dist.tar.gz
         asset_name: dist-${{ steps.get_tag.outputs.TAG }}.tar.gz
         asset_content_type: application/tar+gzip
+    - name: "Push to Release Branch"
+      run: |
+        git add -f dist/
+        git diff-index --quiet HEAD || git commit -m "Build dist for ${{ steps.get_tag.outputs.TAG }}"
+        git push
     # - name: Upload Release Asset - Src
     #   id: upload-release-asset-src  
     #   uses: actions/upload-release-asset@v1
