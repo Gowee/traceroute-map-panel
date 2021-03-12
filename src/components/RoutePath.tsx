@@ -41,17 +41,17 @@ function RoutePath(props: RoutePathProps): ReactElement {
             <div className="route-tooltip">
               <div className="hops-abstract">
                   <div className="content">
-                    {point.hops.length}<sup>hop{point.hops.length > 1 && "s"}</sup> <i>at</i> <small>{point.region}</small> on
+                    {point.hops.length}<sup>hop{point.hops.length > 1 && "s"}</sup> <i>at</i> <small>{point.region}</small>
                   </div>
               </div>
-              <div className="host-dest-label">
-                <span className="host-label" title={host}>
+              <div className="host-dest-label" title={`on the route path from ${host} to ${dest}`}>
+                <span className="host-label">
                   {host}
                 </span> 
                 <span className="host-arrow" style={{ color }}>
                   &nbsp; ➜ &nbsp;
                 </span>
-                <span className="dest-label" title={host}>
+                <span className="dest-label">
                   {dest}
                 </span>
               </div>
