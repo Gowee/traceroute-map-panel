@@ -67,7 +67,7 @@ select hop, ip, rtt, loss from (select mean(avg) as rtt, mean(loss) as loss from
 </details>
 
 ## Geo IP
-The panel relies on external API services for Geo IP resolving in the browser (not the backend). It ships with several built-in Geo IP APIs, which are not affiliated with the panel in any way, for convenience.
+The panel relies on external API services for Geo IP resolving in the browser (not the backend). It ships with several built-in Geo IP APIs for convenience, which are not affiliated in any way with the panel.
 
 An alternative way is to specify custom API or custom function (proper [CORS header](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) is a must). A sample [Cloudflare Worker](https://workers.cloudflare.com/) script that proxies requests to some third-party service is located in [ipip-cfworker.js](https://github.com/Gowee/traceroute-map-panel/blob/master/ipip-cfworker.js).
 
