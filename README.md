@@ -3,6 +3,8 @@
 # Traceroute Map Panel
 Traceroute Map Panel is a Grafana panel that visualize the traceroute hops in a map, just like [Besttrace](https://www.ipip.net/product/client.html).
 
+**Online Demo**: https://trmp-demo.bamboo.workers.dev/
+
 ![Screenshot](https://raw.githubusercontent.com/Gowee/traceroute-map-panel/master/src/img/screenshot2.png)
 
 ## Data
