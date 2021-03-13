@@ -2,6 +2,7 @@ import { PanelOptionsEditorBuilder } from '@grafana/data';
 
 import GeoIPProvidersEditor, { GeoIPProvidersOption } from './geoip/Editor';
 
+// undefined will be treated as defaultValue, so it can only be used for the default option
 export type LongitudeWrapping = undefined | 'primeMeridian' | 'antimeridian';
 export type HopLabelType = 'label' | 'ip' | 'ipAndLabel';
 
@@ -17,7 +18,7 @@ export interface TracerouteMapOptions {
   srcHostAsZerothHop: boolean;
   hopLabelType: HopLabelType;
   showSearchIconInHopLabel: boolean;
-  bogonFilteringSpace: undefined | 'bogon' | 'extendedBogon';
+  bogonFilteringSpace: 'none' | 'bogon' | 'extendedBogon';
   pathSpline: undefined | 'spline1' | 'spline2';
   pathLineStyle: 'solid' | 'dashed' | 'antPath';
   pathAnimationSpeedFactor: number;
@@ -197,7 +198,7 @@ export const buildOptionsEditor = (builder: PanelOptionsEditorBuilder<Traceroute
       defaultValue: 'bogon',
       settings: {
         options: [
-          { label: 'None', value: undefined, description: 'Pass all IPs to GeoIP API without filtering' },
+          { label: 'None', value: 'none', description: 'Pass all IPs to GeoIP API without filtering' },
           {
             label: 'Bogon (private + reserved)',
             value: 'bogon',

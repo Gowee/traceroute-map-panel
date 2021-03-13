@@ -190,7 +190,7 @@ export class IP2Geo {
     }
     const { country, city, region, loc, org } = data;
     // const region_city = city && `${city.indexOf(region) === -1 ? `${city}, ${region}` : city}, ${country}`;
-    const regionFull = regionJoin(country, region, city);
+    const regionFull = regionJoin(city, region, country);
     const [lat, lon] = loc ? loc.split(',').map(parseFloat) : [undefined, undefined];
     const geo = { region: regionFull, label: org, lat, lon };
     return geo;
@@ -199,8 +199,9 @@ export class IP2Geo {
   static async IPSB(ip: string): Promise<IPGeo> {
     const r = await fetch(`https://api.ip.sb/geoip/${ip}`, { headers: { Accept: 'application/json' } });
     const data = await r.json();
-    const { country, latitude, longitude, isp } = data;
-    const geo = { region: country, label: isp, lon: longitude, lat: latitude };
+    const { country, region, city, latitude, longitude, isp } = data;
+    const regionFull = regionJoin(city, region, country);
+    const geo = { region: regionFull, label: isp, lon: longitude, lat: latitude };
     return geo;
   }
 

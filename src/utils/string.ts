@@ -10,10 +10,12 @@ export function orgJoin(org1: string | undefined, org2: string | undefined): str
 }
 
 export function eliminatePrefixOrSuffix(label1?: string, label2?: string): string[] {
-  if (label1 && label2?.startsWith(label1)) {
+  if (label1 && (label2?.startsWith(label1) || label2?.endsWith(label1))) {
     label1 = undefined;
-  } else if (label2 && label1?.startsWith(label2)) {
+  } else if (label2 && (label1?.startsWith(label2) || label1?.endsWith(label2))) {
     label2 = undefined;
   }
   return [label1, label2].filter((value) => value) as string[];
 }
+
+// TODO: over cutting?

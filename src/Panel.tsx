@@ -159,7 +159,7 @@ export class TracerouteMapPanel extends Component<Props, State> {
     }
 
     let bogonFilterer = (_: string) => false; // true for bogon
-    if (options.bogonFilteringSpace) {
+    if (options.bogonFilteringSpace !== 'none') {
       bogonFilterer = (ip: string) => {
         const address = parseIPAddress(ip);
         return address ? isBogusIPAddress(address, options.bogonFilteringSpace === 'extendedBogon') : true;

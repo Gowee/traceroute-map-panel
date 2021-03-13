@@ -7,8 +7,9 @@ on:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
-  build:
+  release:
     name: Release
+    environment: grafana_sign_environment
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -27,12 +28,17 @@ jobs:
     - name: Init
       run:
         yarn install
-    - name: Test & lint
+    - name: Test & Lint
       run:
         yarn ci
     - name: Build
       run:
         yarn build
+    - name: Sign Dist
+      env: # Or as an environment variable
+        GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
+      run:
+        npx @grafana/toolkit plugin:sign
     - name: Create tarball
       run: 
         tar czf /tmp/dist.tar.gz --transform s/^dist/traceroute-map-panel/ dist/
