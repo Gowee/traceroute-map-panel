@@ -1,0 +1,39 @@
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+{
+  "manifestVersion": "2.0.0",
+  "signatureType": "community",
+  "signedByOrg": "gowee",
+  "signedByOrgName": "gowee",
+  "plugin": "gowee-traceroutemap-panel",
+  "version": "0.3.0-beta",
+  "time": 1615610688325,
+  "keyId": "7e4d0c6a708866e7",
+  "files": {
+    "module.js.map": "e315d867aa099083dd61854c0fe0b0a48a5b56d308e63367c5f2fa52caa3b1da",
+    "module.js.LICENSE.txt": "aed62674542d8acf0b84951ed23b19fbb6918b1f4e97eeab958507f054820c2d",
+    "CHANGELOG.md": "6fce9121182318282cd2218aee2e43b3b19fca3bd492fbc4f6e458f314485122",
+    "README.md": "2953333db6f7e6511c071ed30defb7c337a44e23e90e310ce8533282259369ab",
+    "index.html": "2fa2c4168c5bb7b8502989f437e4a1a71e663702b0ec9c01530215c8c026dcaf",
+    "repo.json": "65f237a402f1a2bbc1a1440e6e5257a47217db64eb77051eec692a6d7c600573",
+    "module.js": "7e62d18a620c0ffd9d59014307749a7f58ce4e00badf48673217e506be32f034",
+    "plugin.json": "cbd6832a58bc8f5e960d61617ed83286a9bf85c92867ce5241ac1df660c862bd",
+    "img/logo.svg": "745fb75066b18dcf4f31f6a5af9adaa85ecc9f89a53d97088c068e28cb1a58e6",
+    "img/screenshot.png": "c95e811076cce8beb4d332f823a5ccc51dd1cffed3fca1d5a56954fcb4d86b3f",
+    "img/screenshot1.png": "c95e811076cce8beb4d332f823a5ccc51dd1cffed3fca1d5a56954fcb4d86b3f",
+    "img/screenshot2.png": "9b34dab1a0018578955c6fa274f2f05a8521aed8553abd3c17832842764626c0",
+    "LICENSE": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+  }
+}
+-----BEGIN PGP SIGNATURE-----
+Version: OpenPGP.js v4.10.1
+Comment: https://openpgpjs.org
+
+wqAEARMKAAYFAmBMQ0AACgkQfk0ManCIZuepugIImT6drbw1gmNHqaxJEA43
+OLh/087g65+n7SkutLo9BrpdvC0+rl0TRkrDq75Vk+bUpZWYujPOMZUNiMTb
+ROBzaeUCCNHqDOAgIfJfEITO5nIkP4b9JxR/LMgL8UniBYc7mN4qe39SToSl
+VpLgO9xEDXlwx+WQ9Nz0AfPmxoI7IS6/Csj0
+=ZGpu
+-----END PGP SIGNATURE-----

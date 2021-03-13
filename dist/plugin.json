@@ -22,7 +22,7 @@
       { "name": "Traceroute Map Panel spline", "path": "img/screenshot2.png" }
     ],
     "version": "0.3.0-beta",
-    "updated": "2021-03-12"
+    "updated": "2021-03-13"
   },
 
   "dependencies": {
