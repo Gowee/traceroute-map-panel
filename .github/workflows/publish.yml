@@ -24,7 +24,7 @@ jobs:
         git merge "${GITHUB_REF#refs/heads/}" 
     - uses: actions/setup-node@v1
       with:
-        node-version: '12'
+        node-version: '15'
     - name: Init
       run:
         yarn install
@@ -38,7 +38,7 @@ jobs:
       env: # Or as an environment variable
         GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
       run:
-        npx @grafana/toolkit plugin:sign
+        yarn sign
     - name: Create tarball
       run: 
         tar czf /tmp/dist.tar.gz --transform s/^dist/traceroute-map-panel/ dist/

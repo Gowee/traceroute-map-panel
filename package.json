@@ -8,6 +8,8 @@
     "dev": "grafana-toolkit plugin:dev",
     "watch": "grafana-toolkit plugin:dev --watch",
     "ci": "grafana-toolkit plugin:ci-build",
+    "sign": "grafana-toolkit plugin:sign",
+    "start": "yarn watch",
     "lint": "eslint -c node_modules/@grafana/toolkit/src/config/eslint.plugin.json src --ext js,jsx,ts,tsx"
   },
   "repository": "github:gowee/traceroute-map-panel",
