@@ -21,8 +21,8 @@
       { "name": "Traceroute Map Panel ployline", "path": "img/screenshot1.png" },
       { "name": "Traceroute Map Panel spline", "path": "img/screenshot2.png" }
     ],
-    "version": "0.3.0-beta",
-    "updated": "2021-03-13"
+    "version": "0.3.0",
+    "updated": "2021-03-19"
   },
 
   "dependencies": {
