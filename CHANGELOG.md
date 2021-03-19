@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.3.0
+## 0.3.0 (Mar 19, 2021)
 - Refactor the option editor to be compatible with Grafana 7.x API. ([#4](https://github.com/Gowee/traceroute-map-panel/issues/4))
 - Introduce a bunch of new 3rd-party GeoIP APIs.
 - Add an option to enable concurrent GeoIP resolution with rate-limiting.

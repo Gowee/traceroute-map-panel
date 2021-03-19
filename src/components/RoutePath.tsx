@@ -27,6 +27,7 @@ function RoutePath(props: RoutePathProps): ReactElement {
   const path = points.map((point) => wrapCoord([point.lat, point.lon]) as LatLngTuple);
 
   // TODO: colorize marker
+  // TODO: deactivate tooltip when popup is active
 
   return (
     <div data-host={host} data-dest={dest} data-points={points.length}>
