@@ -1,13 +1,15 @@
 {
   "name": "traceroute-map-panel",
-  "version": "0.3.0-beta",
-  "description": "A Grafana panel that visualize traceroute hops in a map",
+  "version": "0.3.0",
+  "description": "📍🗺️ Visualize traceroute paths on a map in a Grafana panel",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
     "test": "grafana-toolkit plugin:test",
     "dev": "grafana-toolkit plugin:dev",
     "watch": "grafana-toolkit plugin:dev --watch",
     "ci": "grafana-toolkit plugin:ci-build",
+    "sign": "grafana-toolkit plugin:sign",
+    "start": "yarn watch",
     "lint": "eslint -c node_modules/@grafana/toolkit/src/config/eslint.plugin.json src --ext js,jsx,ts,tsx"
   },
   "repository": "github:gowee/traceroute-map-panel",

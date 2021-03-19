@@ -1,5 +1,7 @@
 // This script is expected to deploy on Cloudflare Workers (https://workers.cloudflare.com/)
 
+// ! Does NOT WORK anymore due to the deprecation of the target API.  Only kept for reference. To be rewritten. !
+
 addEventListener('fetch', event => {
     event.respondWith(cached(handleRequest)(event))
 })
