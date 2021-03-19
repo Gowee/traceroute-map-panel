@@ -71,7 +71,7 @@ select hop, ip, rtt, loss from (select mean(avg) as rtt, mean(loss) as loss from
 ## Geo IP
 The panel relies on external API services for Geo IP resolving in the browser (not the backend). It ships with several built-in Geo IP APIs for convenience, which are not affiliated in any way with the panel.
 
-An alternative way is to specify custom API or custom function (proper [CORS header](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) is a must). A sample [Cloudflare Worker](https://workers.cloudflare.com/) script that proxies requests to some third-party service is located in [ipip-cfworker.js](https://github.com/Gowee/traceroute-map-panel/blob/master/ipip-cfworker.js).
+An alternative way is to specify custom API or custom function (proper [CORS header](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) is a must). <del>A sample [Cloudflare Worker](https://workers.cloudflare.com/) script that proxies requests to some third-party service is located in [ipip-cfworker.js](https://github.com/Gowee/traceroute-map-panel/blob/master/ipip-cfworker.js).</del><sup><sub>(No longer working due to the deprecation of that 3-rd party API. To be updated.)</sub></sup>
 
 **Be careful when sharing the panel or its snapshot publicly**, as it implies publicizing API keys ever saved in the options editor even for those which are not selected to be active. For now, the only safe way to share a snapshot is to create a new panel from scratch (instead of duplicating) and choose an API without the requirement of a key.
 
