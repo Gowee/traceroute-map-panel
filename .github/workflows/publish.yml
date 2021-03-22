@@ -39,10 +39,15 @@ jobs:
         GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
       run:
         yarn sign
-    - name: Create tarball
+    - name: Create Tarball
       run: 
-        tar czf /tmp/dist.tar.gz --transform s/^dist/traceroute-map-panel/ dist/
+        tar czf /tmp/dist.tar.gz --transform s/^dist/gowee-traceroutemap-panel/ dist/
         # git archive --format=tar.gz -o /tmp/src.tar.gz --prefix=traceroute-map-panel/ ${{ github.ref }}
+    - name: Create Zip from Tarball
+      run: |
+        cd /tmp
+        tar xzf dist.tar.gz
+        zip -r dist.zip gowee-traceroutemap-panel/
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -62,7 +67,7 @@ jobs:
       env:
         GITHUB_REF: ${{ github.ref }}
       run: echo ::set-output name=TAG::${GITHUB_REF/refs\/tags\//}
-    - name: Upload Release Asset - Dist
+    - name: Upload Release Asset - Dist (tar.gz)
       id: upload-release-asset-dist
       uses: actions/upload-release-asset@v1
       env:
@@ -72,6 +77,16 @@ jobs:
         asset_path: /tmp/dist.tar.gz
         asset_name: dist-${{ steps.get_tag.outputs.TAG }}.tar.gz
         asset_content_type: application/tar+gzip
+    - name: Upload Release Asset - Dist (zip)
+      id: upload-release-asset-dist
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: /tmp/dist.zip
+        asset_name: dist-${{ steps.get_tag.outputs.TAG }}.zip
+        asset_content_type: application/zip
     - name: "Push to Release Branch"
       run: |
         git add -f dist/
