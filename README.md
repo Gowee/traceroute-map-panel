@@ -1,5 +1,6 @@
 ![CI status badge](https://github.com/Gowee/traceroute-map-panel/workflows/CI/badge.svg)
 [![release badge](https://img.shields.io/github/v/release/Gowee/traceroute-map-panel.svg)](https://github.com/Gowee/traceroute-map-panel/releases/latest)
+![tested on grafana 7.4.2](https://img.shields.io/static/v1?label=tested%20on&message=Grafana%207.4.2&color=green)
 # Traceroute Map Panel
 Traceroute Map Panel is a Grafana panel that visualize the traceroute hops in a map, just like [Besttrace](https://www.ipip.net/product/client.html).
 
@@ -81,6 +82,10 @@ The panel is not really time-series aware in the sense that it expects only a st
 If routing is dynamic (e.g. multiple route paths for one src-dest pair), paths displayed on the map may be fairly chaotic.
 
 So it is generally a good idea to replace the default `$timeFilter` with a small range filter, such as `${__to}ms - 5m <= time AND time <= ${__to}ms` (last 5 mins in the time range).
+
+### Telegraf config
+A typical execution of mtr might take roughly a quarter of seconds to finish its hop probing. To avoid unnecessary work, especially when multiple mtr commands are configured, a bigger collection interval should be specified under `[[inputs.exec]]` to overwrite the global short default. Depending on the actual workload, `interval = 5m` or `1m` / `3m` / `10m` / ... would be reasonable. It is recommended to match this with [the one specifed in query](#time-filter). Besides, sometimes `timeout` needs to be increased (e.g. to `60s`) when there are multiple mtr commands to counter jam even though they are parallelized.
+<!-- So the `timeout` should be set to a reasonable value in case its execution is terminated before finishing. The value given in the sample -->
 
 ### Invalid Schema
 For "Invalid Schema" error, the problem might be just mismatched data schema. Or, the query data might not be [*Formatted as Table*](#query-in-grafana)) for the InfluxDB datasource.
