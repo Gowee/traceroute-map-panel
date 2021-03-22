@@ -9,19 +9,19 @@ Hash: SHA512
   "signedByOrgName": "gowee",
   "plugin": "gowee-traceroutemap-panel",
   "version": "0.3.0",
-  "time": 1616148840489,
+  "time": 1616423235891,
   "keyId": "7e4d0c6a708866e7",
   "files": {
     "module.js.map": "94970ced6e17ef2c77414715538b0c48d34ac094fc70d03782c8c92f375f0c40",
     "module.js.LICENSE.txt": "aed62674542d8acf0b84951ed23b19fbb6918b1f4e97eeab958507f054820c2d",
     "CHANGELOG.md": "e12b6f4c97fc1cd0aa8107a70ef7f34257a3225d2ba7d22b7ec17092bb12fdb3",
-    "README.md": "57f1db5171147d441cad193399050921c764e38da5b169926bb5bd7daa93b8a0",
+    "README.md": "7cd9b66de5767d424c0c184ca2e4ad658669413a7deaa12d1b0617d56ff404f8",
     "index.html": "2fa2c4168c5bb7b8502989f437e4a1a71e663702b0ec9c01530215c8c026dcaf",
     "repo.json": "65f237a402f1a2bbc1a1440e6e5257a47217db64eb77051eec692a6d7c600573",
     "module.js": "40856975c4acbc625a05a0f2230dd1b87827506fac123f3e9a2231b02ff13bd1",
-    "plugin.json": "48b70248a16b8c9cf3d8dd781a09b95fc1a94f9f42d96da1f05cc4ae459fe007",
+    "plugin.json": "ff5179b52c3c858cd0ac786f01059bcfa0cd8fed019401282417876e84ad5b33",
     "img/logo.svg": "745fb75066b18dcf4f31f6a5af9adaa85ecc9f89a53d97088c068e28cb1a58e6",
-    "img/screenshot.png": "c95e811076cce8beb4d332f823a5ccc51dd1cffed3fca1d5a56954fcb4d86b3f",
+    "img/screenshot.png": "77e95864922c87f058bd3d5462e557afc5534cd8cdcea7f24fa9ac7506d90bfe",
     "img/screenshot1.png": "c95e811076cce8beb4d332f823a5ccc51dd1cffed3fca1d5a56954fcb4d86b3f",
     "img/screenshot2.png": "9b34dab1a0018578955c6fa274f2f05a8521aed8553abd3c17832842764626c0",
     "LICENSE": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
@@ -31,9 +31,9 @@ Hash: SHA512
 Version: OpenPGP.js v4.10.1
 Comment: https://openpgpjs.org
 
-wqEEARMKAAYFAmBUeWgACgkQfk0ManCIZucH2gIFEUG9nvKlc5S7TlyeYNXQ
-e50sRHEEaPe7f4WUb1wpQZe8WxBY9t21lNwD2ht48s7lUHPHO9kkAnGXy5Ae
-i6qz3TMCCQFMxGoMGwbhc8Kv3yzqlx2EUU3Tz8hlibn6X37duCC0GmklhqoQ
-DrQ3Zk1aJNiw7ewKpX7VSn63Abq2DZDLy5dj5Q==
-=wf5a
+wqEEARMKAAYFAmBYqUQACgkQfk0ManCIZuebxQIJAXP6Oc6gQX0vXkDbAr3x
+Z+of5AtqwGHkKcGTrW6BVn4kABlUSjYg6UKwJwqmWUyD3dg6RFB2AkBVEQ6z
+qnUsB3v5Agjj/GlBGPNwaoO9xboMnHrKo12CS+5wMAfO/j1/9INEvPXTUHbO
+2JAFdVdF8TbZYhPnz1JLb5kPEZsEWy7NPWk+0Q==
+=Xpb7
 -----END PGP SIGNATURE-----
