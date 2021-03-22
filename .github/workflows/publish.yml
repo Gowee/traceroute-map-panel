@@ -68,7 +68,7 @@ jobs:
         GITHUB_REF: ${{ github.ref }}
       run: echo ::set-output name=TAG::${GITHUB_REF/refs\/tags\//}
     - name: Upload Release Asset - Dist (tar.gz)
-      id: upload-release-asset-dist
+      id: upload-release-asset-dist-tgz
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -78,7 +78,7 @@ jobs:
         asset_name: dist-${{ steps.get_tag.outputs.TAG }}.tar.gz
         asset_content_type: application/tar+gzip
     - name: Upload Release Asset - Dist (zip)
-      id: upload-release-asset-dist
+      id: upload-release-asset-dist-zip
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
