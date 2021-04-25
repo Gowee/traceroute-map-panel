@@ -61,13 +61,13 @@ Or (less recommended, see [Notes](#time-filter)):
 select mean(avg) as rtt, mean(loss) as loss from mtr WHERE $timeFilter group by hop, ip, host, dest
 ```
 __&__ *Format as __Table__*.
+</details>
 
 #### Preview via the CLi tool of InfluxDB
 When previewing / exploring mtr data in InfluxDB via its CLi client. This following query that groups data by `host->dest` pair gives clearer result for reading.
 ```sql
 select hop, ip, rtt, loss from (select mean(avg) as rtt, mean(loss) as loss from mtr WHERE now() - 6h < time AND time < now() group by hop, ip, host, dest) group by host, dest
 ```
-</details>
 
 ## Geo IP
 The panel relies on external API services for Geo IP resolving in the browser (not the backend). It ships with several built-in Geo IP APIs for convenience, which are not affiliated in any way with the panel.
