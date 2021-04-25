@@ -2,7 +2,7 @@
 [![release badge](https://img.shields.io/github/v/release/Gowee/traceroute-map-panel.svg)](https://github.com/Gowee/traceroute-map-panel/releases/latest)
 ![tested on grafana 7.4.2](https://img.shields.io/static/v1?label=tested%20on&message=Grafana%207.4.2&color=green)
 # Traceroute Map Panel
-Traceroute Map Panel is a Grafana panel that visualize the traceroute hops in a map, just like [Besttrace](https://www.ipip.net/product/client.html).
+Traceroute Map Panel is a Grafana panel that visualize the [traceroute](https://en.wikipedia.org/wiki/Traceroute) hops in a map, just like [Besttrace](https://www.ipip.net/product/client.html).
 
 **Online Demo**: https://trmp-demo.bamboo.workers.dev/
 
